@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "fin2",
+    "slug": "fin2",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/1.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/1.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.surya_expo.fin2"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/1.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/1.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "4b6620d0-5a0c-4dc7-a72d-a77bc38a0fb5"
+      }
+    }
+  }
+}
