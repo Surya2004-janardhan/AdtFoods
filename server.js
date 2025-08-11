@@ -3,21 +3,23 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
-
+const dotenv = require("dotenv");
+const jwt = require("jsonwebtoken"); // <-- Added
+dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
-uri = " ";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key"; // put in .env
+
+uri = process.env.mongo_uri;
 // MongoDB Connection
 mongoose
-  .connect(uri, {
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-  })
+  .connect(uri)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Define Schemas and Models
+// Models
 const userSchema = new mongoose.Schema({
   user_id: String,
   name: String,
@@ -25,7 +27,6 @@ const userSchema = new mongoose.Schema({
   email: String,
   phone_number: String,
 });
-
 const orderSchema = new mongoose.Schema({
   user_email: String,
   user_name: String,
@@ -35,17 +36,10 @@ const orderSchema = new mongoose.Schema({
   status: String,
   user_id: String,
 });
-
 const tokensschema = new mongoose.Schema({
   user_id: String,
   token: String,
 });
-// const foodItemSchema = new mongoose.Schema({
-//   id: Number,
-//   name: String,
-//   price: Number,
-//   available: Boolean,
-// });
 const foodItemSchema = new mongoose.Schema({
   id: Number,
   name: String,
@@ -53,21 +47,31 @@ const foodItemSchema = new mongoose.Schema({
   available: Boolean,
   image: String,
 });
-const FoodItem = mongoose.model("fooditems", foodItemSchema);
-
 const restaurantSchema = new mongoose.Schema({}, { strict: false });
 
+const FoodItem = mongoose.model("fooditems", foodItemSchema);
 const User = mongoose.model("users", userSchema);
 const Order = mongoose.model("orders", orderSchema);
-// const FoodItem = mongoose.model("food_items", foodItemSchema);
 const Restaurant = mongoose.model("restaurants", restaurantSchema);
 const Token = mongoose.model("tokens", tokensschema);
+
+// ✅ JWT middleware
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(401).json({ error: "No token provided" });
+
+  const token = authHeader.split(" ")[1]; // Expect "Bearer <token>"
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: "Invalid or expired token" });
+    req.user = decoded; // attach decoded payload (e.g. user_id)
+    next();
+  });
+}
+
 // ---------------------- Routes ----------------------
-app.get("/food-items", async (req, res) => {
+app.get("/food-items", verifyJWT, async (req, res) => {
   const items = await FoodItem.find({});
   res.json(items);
-  // items = json(items)
-  // console.log(items);
 });
 
 app.post("/signup", async (req, res) => {
@@ -96,18 +100,14 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Error signing up user" });
   }
 });
-// token findin endpoint -- error prone area to be checked
 
-app.get("/get-token", async (req, res) => {
+app.get("/get-token", verifyJWT, async (req, res) => {
   const { user_id } = req.query;
-
   if (!user_id) {
     return res.status(400).json({ success: false, message: "Missing user_id" });
   }
-
   try {
     const tokenDoc = await Token.findOne({ user_id: user_id });
-
     if (tokenDoc) {
       res.json({ success: true, token: tokenDoc.token });
     } else {
@@ -121,45 +121,43 @@ app.get("/get-token", async (req, res) => {
   }
 });
 
+// ✅ Modified to generate JWT
 app.post("/login", async (req, res) => {
   const { user_id, password } = req.body;
   const user = await User.findOne({ user_id, password });
   if (!user)
     return res.status(401).json({ error: "Invalid user ID or password" });
-  res.json({ success: true, user });
+
+  const token = jwt.sign(
+    { user_id: user.user_id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: "2h" }
+  );
+  res.json({ success: true, token, user });
 });
-// save-token endpoint later included error prone route fr
-app.post("/save-token", async (req, res) => {
+
+app.post("/save-token", verifyJWT, async (req, res) => {
   const { userId, token } = req.body;
   console.log("Received token:", userId, token);
 
   if (!userId || !token) {
     return res.status(400).json({ error: "User ID and token are required" });
   }
-
   try {
-    // Update the device token in the users collection
     const userUpdateResult = await User.updateOne(
       { user_id: userId },
       { $set: { device_token: token } }
     );
-
     if (userUpdateResult.matchedCount === 0) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    // Check if this token already exists in tokens collection
     const existingToken = await Token.findOne({ user_id: userId, token });
-
     if (existingToken) {
       return res.status(200).json({
         success: "Token already exists in tokens collection, user updated",
       });
     }
-
-    // Insert the token into the tokens collection
     await Token.create({ user_id: userId, token });
-
     res.status(200).json({
       success: "Token saved in both users and tokens collections",
     });
@@ -169,7 +167,7 @@ app.post("/save-token", async (req, res) => {
   }
 });
 
-app.get("/orders", async (req, res) => {
+app.get("/orders", verifyJWT, async (req, res) => {
   try {
     const orders = await Order.find({});
     res.json(orders);
@@ -178,7 +176,7 @@ app.get("/orders", async (req, res) => {
   }
 });
 
-app.put("/food-items/:id", async (req, res) => {
+app.put("/food-items/:id", verifyJWT, async (req, res) => {
   const id = parseInt(req.params.id);
   const { available } = req.body;
   if (typeof available !== "boolean")
@@ -188,12 +186,12 @@ app.put("/food-items/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/restaurants", async (req, res) => {
+app.get("/restaurants", verifyJWT, async (req, res) => {
   const restaurants = await Restaurant.find({});
   res.json(restaurants);
 });
 
-app.post("/place-order", async (req, res) => {
+app.post("/place-order", verifyJWT, async (req, res) => {
   const { userEmail, userName, userPhone, items, totalAmount, status, userId } =
     req.body;
   const newOrder = await Order.create({
@@ -205,11 +203,10 @@ app.post("/place-order", async (req, res) => {
     status,
     user_id: userId,
   });
-
   res.json({ success: true, orderId: newOrder._id });
 });
 
-app.patch("/orders/:id", async (req, res) => {
+app.patch("/orders/:id", verifyJWT, async (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
 
