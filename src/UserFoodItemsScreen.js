@@ -230,7 +230,11 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
       <View style={styles.bottomNavigation}>
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate("Checkout", { userId, restaurantId, jwtToken })
+            navigation.navigate("Checkout", {
+              userId,
+              restaurantId: "all", // Show all cart items, not just this restaurant
+              jwtToken,
+            })
           }
           style={styles.navButton}
         >
