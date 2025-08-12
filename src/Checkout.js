@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Toast from "react-native-toast-message";
 import RazorpayCheckout from "react-native-razorpay";
+import { useCart } from "./CartContext";
 
 import {
   View,
@@ -19,116 +20,135 @@ import CONFIG from "../config";
 import LottieView from "lottie-react-native";
 
 const Checkout = ({ route, navigation }) => {
+  const { userId, restaurantId, jwtToken } = route.params;
+  const { cartItems, totalAmount, clearCart, getCartItemsForRestaurant } = useCart();
+  const [loader, setLoader] = useState(false); // Only for place order loading
+
+  // Get cart items - if restaurantId is "all", show all items, otherwise filter by restaurant
+  const displayCartItems = restaurantId === "all" 
+    ? cartItems 
+    : getCartItemsForRestaurant(restaurantId);
+
+  console.log("Checkout - All cart items:", cartItems);
+  console.log("Checkout - Display cart items:", displayCartItems);
+  console.log("Checkout - Total amount:", totalAmount);
+  console.log("Checkout - Restaurant ID:", restaurantId);
   const { userId, restaurantId, jwtToken } = route.params || {};
-  const [cartItems, setCartItems] = useState([]);
+  const { cartItems, totalAmount, clearCart, getCartItemsForRestaurant } =
+    useCart();
   const [loading, setLoading] = useState(true);
   const [loader, setLoader] = useState(false);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
   const fadeAnim = new Animated.Value(1);
-  // const [showLoader, setShowLoader] = useState(true);
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     setShowLoader(false);
-  //   }, 3000); // 3 seconds
-
-  //   return () => clearTimeout(timer);
-  // }, []);
-  useEffect(() => {
-    fetchCartItems();
-  }, []);
+  // Get cart items - if restaurantId is "all", show all items, otherwise filter by restaurant
+  const displayCartItems =
+    restaurantId === "all"
+      ? cartItems
+      : getCartItemsForRestaurant(restaurantId);
 
   useEffect(() => {
-    calculateTotal();
-  }, [cartItems]);
+    // Calculate final amount (including any additional charges) whenever cart items change
+    const calculatedAmount = totalAmount + 10; // Assuming a flat 10 INR charge for simplicity
+    setFinalAmount(calculatedAmount);
+  }, [totalAmount, cartItems]);
 
-  const fetchCartItems = async () => {
+  const handlePlaceOrder = async () => {
+    if (displayCartItems.length === 0) {
+      Toast.show({
+        type: "error",
+        text1: "Empty Cart",
+        text2: "Please add items to cart first",
+        position: "top",
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      console.log(
-        "Fetching cart items for userId:",
-        userId,
-        "restaurantId:",
-        restaurantId
-      );
+      // 1. First save cart items to database
+      await saveCartToDatabase(displayCartItems, userId, jwtToken);
 
-      const response = await fetch(
-        `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`,
-        {
-          method: "GET",
+      // 2. Proceed with Razorpay payment
+      const options = {
+        description: "Food Order Payment",
+        image: "https://your-logo-url.com/logo.png",
+        currency: "INR",
+        key: "rzp_test_your_key_here",
+        amount: Math.round(finalAmount * 100), // Amount in paise
+        name: "AdityaFoods",
+        order_id: "", // Replace with actual order ID from your backend if needed
+        prefill: {
+          email: "user@example.com",
+          contact: "9876543210",
+          name: "User Name",
+        },
+        theme: { color: "#ff8c00" },
+      };
+
+      const data = await RazorpayCheckout.open(options);
+
+      // Payment successful - clear cart and navigate
+      clearCart();
+
+      Toast.show({
+        type: "success",
+        text1: "✅ Order placed!",
+        text2: "Payment successful and order placed 🎉",
+        position: "top",
+        visibilityTime: 2000,
+        onHide: () => {
+          navigation.reset({
+            index: 1,
+            routes: [
+              { name: "HomeScreen", params: { jwtToken } },
+              { name: "Orders", params: { userId, jwtToken } },
+            ],
+          });
+        },
+      });
+    } catch (error) {
+      console.error("Order placement error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Payment Failed",
+        text2: "Please try again",
+        position: "top",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to save cart items to database when order is placed
+  const saveCartToDatabase = async (items, userId, jwtToken) => {
+    try {
+      for (const item of items) {
+        await fetch(`${CONFIG.API_BASE_URL}/usercart/add-item`, {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
           },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch cart items");
+          body: JSON.stringify({
+            userId: userId,
+            itemId: item._id,
+            itemName: item.name,
+            price: item.price,
+            imageUrl: item.image,
+            restaurantId: item.restaurantId,
+            quantity: item.quantity,
+          }),
+        });
       }
-      const data = await response.json();
-      console.log("Received cart data:", data);
-
-      // ✅ Filter items only for the current restaurant
-      const filteredData = data.filter(
-        (item) => item.restaurant_id === restaurantId
-      );
-      console.log("Filtered cart data for restaurant:", filteredData);
-
-      setCartItems(filteredData);
-      setLoading(false);
+      console.log("Cart items saved to database successfully");
     } catch (error) {
-      console.error("Error in fetchCartItems:", error);
-      Alert.alert("Error", error.message);
+      console.error("Error saving cart to database:", error);
+      throw error;
     }
   };
 
-  // async function sendPushNotification(expoPushToken) {
-  //   const message = {
-  //     to: expoPushToken,
-  //     sound: "default",
-  //     title: "New Order Received",
-  //     body: "You have a new order!",
-  //     data: { screen: "PendingOrders" },
-  //   };
-
-  //   await fetch("https://exp.host/--/api/v2/push/send", {
-  //     method: "POST",
-  //     headers: {
-  //       Accept: "application/json",
-  //       "Accept-encoding": "gzip, deflate",
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify(message),
-  //   });
-  // }
-
-  const deleteCartItems = async () => {
-    try {
-      const response = await fetch(`${CONFIG.API_BASE_URL}/delete-items`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
-        },
-        body: JSON.stringify({ userId, restaurantId }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to delete cart items");
-      }
-      setCartItems([]);
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    }
-  };
-
-  const calculateTotal = () => {
-    const total = cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    setTotalAmount(total);
-  };
   const LoadingComponent = () => (
     <View style={styles.loaderContainer}>
       <View style={styles.loaderCircle}>
@@ -198,110 +218,6 @@ const Checkout = ({ route, navigation }) => {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) {
-      Alert.alert("Error", "Your cart is empty!");
-      return;
-    }
-
-    const finalAmount = (totalAmount + 10) * 100;
-
-    const options = {
-      description: "Order Payment",
-      image:
-        "https://drive.google.com/file/d/1zQA-5pjFI-AbDpMdajHNgqtnY4HElF0u/view?usp=drive_link", // optional
-      currency: "INR",
-      key: "rzp_test_cyicVHrZH1TfRh",
-      amount: finalAmount,
-      name: "Aditya Foods",
-      prefill: {
-        email: "customer@example.com",
-        contact: "9876543210",
-        name: "Customer Name",
-      },
-      theme: { color: "#ff8c00" },
-    };
-
-    RazorpayCheckout.open(options)
-      .then(async (data) => {
-        // Payment successful → now place order
-        setLoading(true);
-        setLoader(true);
-        try {
-          const orderData = {
-            items: cartItems.map((item) => ({
-              id: item.id,
-              name: item.item_name,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-            totalAmount,
-            orderDate: new Date().toISOString(),
-            status: "pending",
-            user_id: userId,
-            admin_id: restaurantId,
-            payment_id: data.razorpay_payment_id,
-          };
-
-          const response = await fetch(`${CONFIG.API_BASE_URL}/place-order`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
-            },
-            body: JSON.stringify(orderData),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Failed to place order");
-          }
-
-          // const tokenResponse = await fetch(
-          //   `${CONFIG.API_BASE_URL}/admin-tokens?adminId=${restaurantId}`
-          // );
-          // const { tokens } = await tokenResponse.json();
-
-          // for (const token of tokens) {
-          //   await sendPushNotification(token);
-          // }
-
-          Toast.show({
-            type: "success",
-            text1: "✅ Order placed!",
-            text2: "Payment successful and order placed 🎉",
-            position: "top",
-            visibilityTime: 2000,
-            onHide: () => {
-              deleteCartItems();
-              // showLoader ? LoadingComponentplacedorder() : <></>;
-              // navigation.navigate("Orders", { userId });
-              // After successful payment, navigate to Orders
-              navigation.reset({
-                index: 1,
-                routes: [
-                  { name: "HomeScreen", params: { userId } },
-                  { name: "Orders", params: { userId, jwtToken } },
-                ],
-              });
-
-              // navigation.replace("Orders", { userId });
-            },
-          });
-        } catch (error) {
-          Alert.alert("Order Error");
-        } finally {
-          setLoading(false);
-        }
-      })
-      .catch((error) => {
-        Alert.alert(
-          "Payment Failed",
-          error.description || "Payment process was cancelled"
-        );
-      });
-  };
-
   const renderItem = ({ item }) => (
     <Animated.View style={[styles.cartItem, { opacity: fadeAnim }]}>
       <Image
@@ -337,9 +253,9 @@ const Checkout = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Checkout</Text>
-      {cartItems.length > 0 ? (
+      {displayCartItems.length > 0 ? (
         <FlatList
-          data={cartItems}
+          data={displayCartItems}
           renderItem={renderItem}
           keyExtractor={(item) => item.itemId}
           showsVerticalScrollIndicator={false}
@@ -357,7 +273,7 @@ const Checkout = ({ route, navigation }) => {
         </View>
       )}
 
-      {cartItems.length > 0 && (
+      {displayCartItems.length > 0 && (
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>Subtotal:</Text>

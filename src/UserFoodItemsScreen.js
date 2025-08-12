@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import CONFIG from "../config";
 import LottieView from "lottie-react-native";
+import { useCart } from "./CartContext";
 
 const UserFoodItemsScreen = ({ route, navigation }) => {
   const { userId: routeUserId, restaurantId, jwtToken } = route.params;
+  const { addToCart, getItemQuantity, totalCount } = useCart();
 
   // Extract userId from route params or decode from JWT as fallback
   const userId = React.useMemo(() => {
@@ -51,7 +53,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cartItemCount, setCartItemCount] = useState(0);
+  // Remove old cart state since we're using context now
   const LoadingComponent = () => (
     <View style={styles.loaderContainer}>
       <View style={styles.loaderCircle}>
@@ -113,105 +115,51 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
       }
     };
 
-    const fetchCartItems = async () => {
-      try {
-        console.log("Fetching cart items for userId:", userId);
-        console.log(
-          "Cart API URL:",
-          `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`
-        );
-
-        const response = await fetch(
-          `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch cart items");
-        }
-
-        const cartData = await response.json();
-        console.log("Received cart data:", cartData);
-
-        // Filter by current restaurantId
-        const filteredCartData = cartData.filter(
-          (item) => item.restaurant_id === restaurantId
-        );
-        console.log("Filtered cart data for restaurant:", filteredCartData);
-
-        const totalItems = filteredCartData.reduce(
-          (total, item) => total + item.quantity,
-          0
-        );
-        console.log("Total cart items:", totalItems);
-        setCartItemCount(totalItems);
-      } catch (err) {
-        console.error("Error in fetchCartItems:", err);
-        setError(err.message);
-      }
-    };
-
     fetchItems();
-    fetchCartItems();
   }, [restaurantId, userId]);
   // console.log(items, "items");
   const handleAddToCart = async (item) => {
-    // Animate the card when adding to cart
-    Animated.sequence([
-      Animated.timing(scaleValue, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleValue, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    console.log("Adding to cart:", item.name);
+    console.log("Item ID:", item._id);
+    console.log("Restaurant ID:", restaurantId);
+
+    if (!userId) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "User not logged in",
+        position: "top",
+      });
+      return;
+    }
 
     try {
-      console.log("Item being added to cart:", item);
-      console.log("Item ID:", item._id);
-      console.log("Restaurant ID:", restaurantId);
+      // Add item to context (local state)
+      const cartItem = {
+        _id: item._id,
+        name: item.name,
+        price: getPrice(item.price),
+        image: item.image,
+        restaurantId: restaurantId,
+        userId: userId,
+      };
 
-      const response = await fetch(`${CONFIG.API_BASE_URL}/usercart/add-item`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
-        },
-        body: JSON.stringify({
-          userId: userId,
-          itemId: item._id,
-          itemName: item.name,
-          price: getPrice(item.price),
-          imageUrl: item.image_url,
-          restaurantId: restaurantId,
-          quantity: 1,
-        }),
+      addToCart(cartItem);
+
+      Toast.show({
+        type: "success",
+        text1: "Added to Cart",
+        text2: `${item.name} added successfully`,
+        position: "top",
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to add item to cart");
-      } else {
-        Toast.show({
-          type: "success",
-          text1: "🛒 Item added to cart!",
-          text2: "Checkout when you’re ready 😊",
-          position: "top",
-        });
-      }
-
-      // Update cart item count
-      setCartItemCount(cartItemCount + 1);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to add item to cart",
+        position: "top",
+      });
     }
   };
 
@@ -288,9 +236,9 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
         >
           <View style={styles.iconContainer}>
             <Text style={styles.navIcon}>🛒</Text>
-            {cartItemCount > 0 && (
+            {totalCount > 0 && (
               <View style={styles.cartCountContainer}>
-                <Text style={styles.cartCountText}>{cartItemCount}</Text>
+                <Text style={styles.cartCountText}>{totalCount}</Text>
               </View>
             )}
           </View>
@@ -503,3 +451,9 @@ const styles = StyleSheet.create({
 });
 
 export default UserFoodItemsScreen;
+
+// IMPORTANT: Remove any calls to fetchCartItems(), setCartItemCount(), or old cart logic
+// The app now uses CartContext for all cart operations
+
+// If you see any errors about fetchCartItems or setCartItemCount,
+// those functions have been removed in favor of the Cart Context

@@ -388,7 +388,7 @@ const Login = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [phone_number, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  // const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false); // Loading state
 
   const handleLogin = async () => {
     if (!user_id || !password) {
@@ -400,6 +400,8 @@ const Login = ({ navigation }) => {
       });
       return;
     }
+
+    setLoading(true); // Start loading
     try {
       const response = await fetch(`${CONFIG.API_BASE_URL}/login`, {
         method: "POST",
@@ -439,6 +441,8 @@ const Login = ({ navigation }) => {
         text2: "Login failed. Please try again.",
         position: "top",
       });
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
   const handleRegister = async () => {
@@ -452,7 +456,8 @@ const Login = ({ navigation }) => {
       });
       return;
     }
-    // setLoading(true); // start loading
+
+    setLoading(true); // Start loading
     try {
       console.log("inside the fetch of register");
       const response = await fetch(`${CONFIG.API_BASE_URL}/signup`, {
@@ -493,10 +498,9 @@ const Login = ({ navigation }) => {
         text2: "Registration failed. Try again.",
         position: "top",
       });
+    } finally {
+      setLoading(false); // Stop loading
     }
-    // finally {
-    //   setLoading(false); // stop loading
-    // }
   };
 
   return (
@@ -620,17 +624,16 @@ const Login = ({ navigation }) => {
 
             <TouchableOpacity
               onPress={isRegistering ? handleRegister : handleLogin}
-              style={styles.loginButton}
+              style={[styles.loginButton, loading && styles.disabledButton]}
+              disabled={loading}
             >
-              {/* {loading && (
-                <View style={{ marginTop: 20 }}>
-                  <ActivityIndicator size="large" color="#007BFF" />
-                </View>
-              )} */}
-
-              <Text style={styles.loginButtonText}>
-                {isRegistering ? "Register" : "Login"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.loginButtonText}>
+                  {isRegistering ? "Register" : "Login"}
+                </Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -713,6 +716,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
+    opacity: 0.6,
   },
   loginButtonText: {
     color: "white",

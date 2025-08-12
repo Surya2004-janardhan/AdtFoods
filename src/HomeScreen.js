@@ -11,12 +11,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import CONFIG from "../config";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import LottieView from "lottie-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
+import { useCart } from "./CartContext";
 
 const HomeScreen = ({ route }) => {
   const { jwtToken } = route.params || {};
+  const { totalCount } = useCart(); // Get cart count from context
 
   // Extract userId from JWT token
   const userId = React.useMemo(() => {
@@ -41,6 +44,7 @@ const HomeScreen = ({ route }) => {
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
   // console.log(userId,deviceToken)
+
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
@@ -108,12 +112,35 @@ const HomeScreen = ({ route }) => {
     </View>
   );
   const handleLogout = async () => {
-    // Remove JWT from AsyncStorage
-    await AsyncStorage.removeItem("jwtToken");
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
+    try {
+      // Show toast first
+      Toast.show({
+        type: "success",
+        text1: "Logged out Successfully",
+        text2: "You have been logged out safely",
+        position: "top",
+        visibilityTime: 1000,
+      });
+
+      // Remove JWT from AsyncStorage
+      await AsyncStorage.removeItem("jwtToken");
+
+      // Small delay to show toast before navigation
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        });
+      }, 800);
+    } catch (error) {
+      console.error("Logout error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Logout Failed",
+        text2: "Please try again",
+        position: "top",
+      });
+    }
   };
 
   if (loading) {
@@ -320,6 +347,63 @@ const HomeScreen = ({ route }) => {
           </View>
           <Text style={styles.navText}>Orders</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => {
+            console.log("=== CART BUTTON PRESSED ===");
+            console.log("Cart pressed, userId:", userId);
+            console.log("jwtToken present:", jwtToken ? true : false);
+            console.log("Navigation object:", navigation);
+            console.log("About to navigate to Checkout with params:", {
+              userId,
+              jwtToken: jwtToken ? "present" : "missing",
+              restaurantId: "all",
+            });
+
+            try {
+              // First test if navigation works at all
+              console.log("Testing navigation...");
+
+              // Test navigation to Orders first (we know this works)
+              // navigation.navigate("Orders", { jwtToken });
+              // console.log("Orders navigation would work");
+
+              // Now try Checkout
+              navigation.navigate("Checkout", {
+                userId,
+                jwtToken,
+                restaurantId: "all",
+              });
+              console.log("Navigation to Checkout successful");
+            } catch (error) {
+              console.error("Navigation error:", error);
+
+              // Try alternative approach
+              try {
+                console.log("Trying alternative navigation...");
+                navigation.push("Checkout", {
+                  userId,
+                  jwtToken,
+                  restaurantId: "all",
+                });
+              } catch (altError) {
+                console.error("Alternative navigation also failed:", altError);
+              }
+            }
+          }}
+        >
+          <View style={styles.icon}>
+            <Text style={styles.iconText}>🛒</Text>
+            {totalCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{totalCount}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.navText}>Cart</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("AccountScreen", { jwtToken })}
@@ -336,6 +420,7 @@ const HomeScreen = ({ route }) => {
           <Text style={styles.navText}>Logout</Text>
         </TouchableOpacity>
       </View>
+      <Toast />
     </View>
   );
 };
@@ -749,6 +834,26 @@ const styles = StyleSheet.create({
   accountIcon: {
     fontSize: 20,
     color: "#ffffff",
+  },
+
+  cartBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "#ff4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+  },
+
+  cartBadgeText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
 // ...existing code...

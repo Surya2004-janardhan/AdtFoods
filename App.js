@@ -87,6 +87,7 @@ import Checkout from "./src/Checkout";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CONFIG from "./config";
 import LottieView from "lottie-react-native";
+import { CartProvider } from "./src/CartContext";
 
 const Stack = createStackNavigator();
 
@@ -131,28 +132,33 @@ export default function App() {
     return <LoadingComponent />;
   }
 
-  return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen
-          name="HomeScreen"
-          component={HomeScreen}
-          initialParams={initialParams}
-        />
+  // Check the current navigation stack setup to ensure Checkout screen is registered
+  console.log("App.js - Navigation stack configuration");
 
-        <Stack.Screen name="AccountScreen" component={AccountScreen} />
-        <Stack.Screen
-          name="UserFoodItemsScreen"
-          component={UserFoodItemsScreen}
-        />
-        <Stack.Screen name="Orders" component={Orders} />
-        <Stack.Screen name="Checkout" component={Checkout} />
-      </Stack.Navigator>
-    </NavigationContainer>
+  return (
+    <CartProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen
+            name="HomeScreen"
+            component={HomeScreen}
+            initialParams={initialParams}
+          />
+
+          <Stack.Screen name="AccountScreen" component={AccountScreen} />
+          <Stack.Screen
+            name="UserFoodItemsScreen"
+            component={UserFoodItemsScreen}
+          />
+          <Stack.Screen name="Orders" component={Orders} />
+          <Stack.Screen name="Checkout" component={Checkout} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </CartProvider>
   );
 }
 
