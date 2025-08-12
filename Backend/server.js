@@ -187,8 +187,9 @@ app.put("/food-items/:id", verifyJWT, async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/restaurants", verifyJWT, async (req, res) => {
+app.get("/restaurants", async (req, res) => {
   const restaurants = await Restaurant.find({});
+  // console.log(restaurants);
   res.json(restaurants);
 });
 

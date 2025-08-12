@@ -84,7 +84,7 @@ import AccountScreen from "./src/AccountScreen";
 import UserFoodItemsScreen from "./src/UserFoodItemsScreen";
 import Orders from "./src/Orders";
 import Checkout from "./src/Checkout";
-import * as Device from "expo-device";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import CONFIG from "./config";
 import LottieView from "lottie-react-native";
 
@@ -98,34 +98,21 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      const deviceId =
-        Device.osInternalBuildId || Device.osBuildId || "unknown";
-
       try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/verify-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: deviceId }),
-        });
-
-        const data = await response.json();
-        console.log("Token check response:", data);
-
-        if (data && data.valid) {
-          // setUserId(data.admin_id); // save the user/admin ID
+        const jwtToken = await AsyncStorage.getItem("jwtToken");
+        if (jwtToken) {
+          // Optionally, verify token with backend here if you want
           setInitialRoute("HomeScreen");
-          setInitialParams({ userId: data.user_id, deviceToken: deviceId });
+          setInitialParams({ jwtToken });
         } else {
           setInitialRoute("Login");
         }
       } catch (error) {
-        console.log("Token verification error:", error);
         setInitialRoute("Login");
       } finally {
         setLoading(false);
       }
     };
-
     init();
   }, []);
   const LoadingComponent = () => (

@@ -13,9 +13,10 @@ import {
 import CONFIG from "../config";
 import { useNavigation } from "@react-navigation/native";
 import LottieView from "lottie-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = ({ route }) => {
-  const { userId, deviceToken } = route.params || {};
+  const { jwtToken } = route.params || {};
 
   // const { userId } = route.params;
   // const { deviceToken } = route.params;
@@ -36,15 +37,20 @@ const HomeScreen = ({ route }) => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
           },
         });
-
         if (!response.ok) {
           throw new Error("Failed to fetch restaurants");
         }
-        // console.log(response)
-        const data = await response.json();
-        // console.log(data,"data is ")
+        let data = await response.json();
+        // Map backend fields to frontend expected fields
+        data = data.map((item) => ({
+          ...item,
+          restaurant_name: item.restaurant_name || item.name,
+          restaurant_image: item.restaurant_image || item.image,
+          restaurant_location: item.restaurant_location || item.address,
+        }));
         setRestaurants(data);
         setFeaturedRestaurants(data.slice(0, 5));
         const uniqueLocations = [
@@ -53,14 +59,12 @@ const HomeScreen = ({ route }) => {
         setLocations(uniqueLocations);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching restaurants:", error);
         setError("Failed to fetch data");
         setLoading(false);
       }
     };
-
     fetchRestaurants();
-  }, []);
+  }, [jwtToken]);
 
   useEffect(() => {
     const autoScroll = setInterval(() => {
@@ -88,40 +92,13 @@ const HomeScreen = ({ route }) => {
       </View>
     </View>
   );
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        onPress: () => {
-          fetch(`${CONFIG.API_BASE_URL}/delete-token`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ token: deviceToken }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (!data.success) {
-                console.warn("Token deletion failed");
-              }
-            })
-            .catch((err) => {
-              console.warn("Error during token deletion:", err);
-            })
-            .finally(() => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Login" }],
-              });
-            });
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    // Remove JWT from AsyncStorage
+    await AsyncStorage.removeItem("jwtToken");
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
   };
 
   if (loading) {
@@ -166,7 +143,7 @@ const HomeScreen = ({ route }) => {
                 onPress={() =>
                   navigation.navigate("UserFoodItemsScreen", {
                     restaurantId: item.restaurant_id,
-                    userId,
+                    jwtToken,
                   })
                 }
               >
@@ -261,7 +238,7 @@ const HomeScreen = ({ route }) => {
                 onPress={() =>
                   navigation.navigate("UserFoodItemsScreen", {
                     restaurantId: item.restaurant_id,
-                    userId,
+                    jwtToken,
                   })
                 }
               >
@@ -319,7 +296,7 @@ const HomeScreen = ({ route }) => {
       <View style={styles.navbar}>
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("Orders", { userId })}
+          onPress={() => navigation.navigate("Orders", { jwtToken })}
         >
           <View style={styles.icon}>
             <Text style={styles.iconText}>📝</Text>
@@ -328,7 +305,7 @@ const HomeScreen = ({ route }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("AccountScreen", { userId })}
+          onPress={() => navigation.navigate("AccountScreen", { jwtToken })}
         >
           <View style={styles.icon}>
             <Text style={styles.iconText}>👤</Text>
@@ -757,5 +734,5 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
 });
-
+// ...existing code...
 export default HomeScreen;

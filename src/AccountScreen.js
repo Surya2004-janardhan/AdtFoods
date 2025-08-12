@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import jwt_decode from "jwt-decode";
 import {
   View,
   Text,
@@ -12,16 +13,27 @@ import Icon from "react-native-vector-icons/Ionicons";
 import LottieView from "lottie-react-native";
 
 const AccountScreen = ({ route }) => {
-  const { userId } = route.params;
+  const { jwtToken } = route.params;
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    if (!jwtToken) return;
+    // Decode userId from JWT
+    const decoded = jwt_decode(jwtToken);
+    setUserId(decoded.user_id);
+  }, [jwtToken]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/users/${userId}`);
+        const response = await fetch(`${CONFIG.API_BASE_URL}/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
         if (!response.ok) throw new Error("Failed to fetch user data");
-
         const data = await response.json();
         setUserData(data);
       } catch (error) {
@@ -30,9 +42,8 @@ const AccountScreen = ({ route }) => {
         setLoading(false);
       }
     };
-
-    fetchUserData();
-  }, [userId]);
+    if (userId && jwtToken) fetchUserData();
+  }, [userId, jwtToken]);
   const LoadingComponent = () => (
     <View style={styles.loaderContainer}>
       <View style={styles.loaderCircle}>

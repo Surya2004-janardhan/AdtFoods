@@ -378,11 +378,10 @@ import {
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/Ionicons";
 import CONFIG from "../config";
-import * as Device from "expo-device";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Login = ({ navigation }) => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [token, setToken] = useState(null);
   const [user_id, setId] = useState("");
   const [user_name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -391,51 +390,7 @@ const Login = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   // const [loading, setLoading] = useState(false); // Loading state
 
-  useEffect(() => {
-    const deviceId = Device.osInternalBuildId || Device.osBuildId || "unknown";
-    console.log("Device ID:", deviceId);
-    setToken(deviceId);
-  }, []);
-
-  useEffect(() => {
-    const verifyToken = async () => {
-      try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/verify-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token: token }),
-        });
-        const data = await response.json();
-        console.log("✅ Verify Token Response:", data);
-
-        if (data && data.valid) {
-          const userId = data.user_id;
-          console.log("🔐 Token is valid. User ID:", userId);
-          navigation.navigate("HomeScreen", { userId, deviceToken: token });
-        } else {
-          navigation.navigate("Login");
-        }
-      } catch (error) {
-        console.log("🚨 Error during token verification:", error);
-        Toast.show({
-          type: "error",
-          text1: "Login Check Failed",
-          text2: "Please login again",
-          position: "top",
-        });
-        navigation.navigate("Login");
-      }
-    };
-
-    if (token) {
-      verifyToken();
-    }
-  }, [navigation, token]);
-
   const handleLogin = async () => {
-    console.log("inside of login");
     if (!user_id || !password) {
       Toast.show({
         type: "error",
@@ -445,55 +400,39 @@ const Login = ({ navigation }) => {
       });
       return;
     }
-    // setLoading(true); // start loading
-
     try {
       const response = await fetch(`${CONFIG.API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, password }),
-        credentials: "include",
       });
       const data = await response.json();
-      if (data.success) {
-        console.log("data");
-        const userId = user_id;
-        if (token) {
-          console.log("🔑 JWT Token:", token);
-          await fetch(`${CONFIG.API_BASE_URL}/store-token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: userId, token }),
-          });
-          Toast.show({
-            type: "success",
-            text1: "Login Successful",
-            text2: "Redirecting to user Dashboard",
-            position: "top",
-            visibilityTime: 300,
-            onHide: () => {
-              navigation.navigate("HomeScreen", { userId, deviceToken: token });
-            },
-          });
-        } else {
-          console.log("⚠️ Token is undefined. Cannot store in AsyncStorage.");
-          Toast.show({
-            type: "error",
-            text1: "Login Error",
-            text2: "Token not received. Please try again.",
-            position: "top",
-          });
-        }
+      if (data.success && data.token) {
+        await AsyncStorage.setItem("jwtToken", data.token);
+        Toast.show({
+          type: "success",
+          text1: "Login Successful",
+          text2: "Redirecting to user Dashboard",
+          position: "top",
+          visibilityTime: 300,
+          onHide: () => {
+            navigation.reset({
+              index: 0,
+              routes: [
+                { name: "HomeScreen", params: { jwtToken: data.token } },
+              ],
+            });
+          },
+        });
       } else {
         Toast.show({
           type: "error",
           text1: "Login Failed",
-          text2: "Invalid credentials",
+          text2: data.error || "Invalid credentials",
           position: "top",
         });
       }
     } catch (error) {
-      console.log("🚨 Error during login:", error);
       Toast.show({
         type: "error",
         text1: "Error",
@@ -501,9 +440,6 @@ const Login = ({ navigation }) => {
         position: "top",
       });
     }
-    // finally {
-    //   setLoading(false); // stop loading
-    // }
   };
   const handleRegister = async () => {
     console.log("inside of register");
