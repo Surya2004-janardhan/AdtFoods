@@ -16,6 +16,7 @@ import LottieView from "lottie-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import { useCart } from "./CartContext";
+import { theme } from "./modernTheme";
 
 const HomeScreen = ({ route }) => {
   const { jwtToken } = route.params || {};
@@ -159,181 +160,196 @@ const HomeScreen = ({ route }) => {
     <View style={styles.mainContainer}>
       <ScrollView
         style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>Home</Text>
+        {/* Hero Section with Orange Background */}
+        <View style={styles.heroSection}>
+          <Text style={styles.title}>AdityaFoods</Text>
+          <Text style={styles.subtitle}>
+            Delicious food delivered to your door
+          </Text>
+        </View>
 
-          {/* Featured Restaurants Section */}
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            style={styles.featuredContainer}
-            onMomentumScrollEnd={(event) => {
-              const newIndex = Math.round(
-                event.nativeEvent.contentOffset.x / 360
-              );
-              setCurrentIndex(newIndex);
-            }}
-          >
-            {featuredRestaurants.map((item, index) => (
-              <TouchableOpacity
-                key={item._id?.toString() ?? index.toString()}
-                style={styles.featuredCard}
-                onPress={() =>
-                  navigation.navigate("UserFoodItemsScreen", {
-                    restaurantId: item.restaurant_id,
-                    userId: userId,
-                    jwtToken,
-                  })
-                }
-              >
-                <Image
-                  source={{ uri: item.restaurant_image }}
-                  style={styles.featuredImage}
-                />
-                <View style={styles.featuredContent}>
-                  <View style={styles.featuredDetails}>
-                    <Text style={styles.featuredName} numberOfLines={2}>
-                      {item.restaurant_name}
-                    </Text>
-                    <View style={styles.featuredFooter}>
-                      <View style={styles.featuredRating}>
-                        <Text style={styles.ratingText}>4.5</Text>
-                        <Text style={styles.starIcon}>⭐</Text>
-                      </View>
-                      <View style={styles.featuredTag}>
-                        <Text style={styles.tagText}>Featured</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Pagination dots */}
-          <View style={styles.paginationDots}>
-            {featuredRestaurants.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor:
-                      currentIndex === index ? "#ff8c00" : "#ccc",
-                  },
-                ]}
-              />
-            ))}
-          </View>
-
-          {/* Location Section */}
-          <View style={styles.locationSection}>
-            <Text style={styles.title}>Pick Your Near Location</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.locationContainer}
+        {/* Featured Restaurants Section */}
+        <Text style={styles.sectionTitle}>Featured</Text>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          style={styles.featuredContainer}
+          onMomentumScrollEnd={(event) => {
+            const newIndex = Math.round(
+              event.nativeEvent.contentOffset.x / 360
+            );
+            setCurrentIndex(newIndex);
+          }}
+        >
+          {featuredRestaurants.map((item, index) => (
+            <TouchableOpacity
+              key={item._id?.toString() ?? index.toString()}
+              style={styles.featuredCard}
+              onPress={() =>
+                navigation.navigate("UserFoodItemsScreen", {
+                  restaurantId: item.restaurant_id,
+                  userId: userId,
+                  jwtToken,
+                })
+              }
             >
-              <TouchableOpacity
-                style={[
-                  styles.locationCard,
-                  !selectedLocation && styles.selectedLocationCard,
-                ]}
-                onPress={() => setSelectedLocation(null)}
-              >
-                <Text style={styles.locationIcon}>🌎</Text>
-                <Text style={styles.locationName}>All Locations</Text>
-              </TouchableOpacity>
-              {locations.map((location, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.locationCard,
-                    selectedLocation === location &&
-                      styles.selectedLocationCard,
-                  ]}
-                  onPress={() => setSelectedLocation(location)}
-                >
-                  <Text style={styles.locationIcon}>📍</Text>
-                  <Text style={styles.locationName}>{location}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <Text style={styles.title}>Restaurants</Text>
-
-          {/* Restaurant List */}
-          <View style={styles.restaurantList}>
-            {(selectedLocation
-              ? restaurants.filter(
-                  (r) => r.restaurant_location === selectedLocation
-                )
-              : restaurants
-            ).map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.card}
-                onPress={() =>
-                  navigation.navigate("UserFoodItemsScreen", {
-                    restaurantId: item.restaurant_id,
-                    userId: userId,
-                    jwtToken,
-                  })
-                }
-              >
-                <Image
-                  source={{ uri: item.restaurant_image }}
-                  style={styles.image}
-                />
-                <View style={styles.cardContent}>
-                  <View style={styles.headerContainer}>
-                    <Text style={styles.restaurantName}>
-                      {item.restaurant_name}
-                    </Text>
-                    <View style={styles.ratingContainer}>
+              <Image
+                source={{ uri: item.restaurant_image }}
+                style={styles.featuredImage}
+              />
+              <View style={styles.featuredContent}>
+                <View style={styles.featuredDetails}>
+                  <Text style={styles.featuredName} numberOfLines={2}>
+                    {item.restaurant_name}
+                  </Text>
+                  <View style={styles.featuredFooter}>
+                    <View style={styles.featuredRating}>
                       <Text style={styles.ratingText}>4.5</Text>
                       <Text style={styles.starIcon}>⭐</Text>
                     </View>
-                  </View>
-                  <View style={styles.infoContainer}>
-                    <View style={styles.locationContainer}>
-                      <Text style={styles.locationIcon}>📍</Text>
-                      <Text style={styles.location}>
-                        {item.restaurant_location}
-                      </Text>
-                    </View>
-                    <View style={styles.additionalInfo}>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoIcon}>⏰</Text>
-                        <Text style={styles.infoText}>30-40 min</Text>
-                      </View>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoIcon}>🕒</Text>
-                        <Text style={styles.infoText}>24/7 availability</Text>
-                      </View>
-                    </View>
-                    <View style={styles.tagContainer}>
-                      <View style={styles.tag}>
-                        <Text style={styles.tagText}>Popular</Text>
-                      </View>
-                      <View style={styles.tag}>
-                        <Text style={styles.tagText}>Trending</Text>
-                      </View>
+                    <View style={styles.featuredTag}>
+                      <Text style={styles.tagText}>Featured</Text>
                     </View>
                   </View>
                 </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Pagination dots */}
+        <View style={styles.paginationDots}>
+          {featuredRestaurants.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor:
+                    currentIndex === index
+                      ? theme.colors.primary
+                      : theme.colors.gray300,
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* Location Section */}
+        <Text style={styles.sectionTitle}>Locations</Text>
+        <View style={styles.locationSection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.locationScrollContent}
+          >
+            <TouchableOpacity
+              style={[
+                styles.locationCard,
+                !selectedLocation && styles.selectedLocationCard,
+              ]}
+              onPress={() => setSelectedLocation(null)}
+            >
+              <Text style={styles.locationIcon}>🌎</Text>
+              <Text style={styles.locationName}>All Locations</Text>
+            </TouchableOpacity>
+            {locations.map((location, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.locationCard,
+                  selectedLocation === location && styles.selectedLocationCard,
+                ]}
+                onPress={() => setSelectedLocation(location)}
+              >
+                <Text style={styles.locationIcon}>📍</Text>
+                <Text
+                  style={[
+                    styles.locationName,
+                    selectedLocation === location &&
+                      styles.selectedLocationName,
+                  ]}
+                >
+                  {location}
+                </Text>
               </TouchableOpacity>
             ))}
-          </View>
-
-          {/* Add padding at bottom for navbar */}
-          <View style={{ height: 80 }} />
+          </ScrollView>
         </View>
+
+        <Text style={styles.sectionTitle}>Restaurants</Text>
+
+        {/* Restaurant List - New Card Design */}
+        <View style={styles.restaurantList}>
+          {(selectedLocation
+            ? restaurants.filter(
+                (r) => r.restaurant_location === selectedLocation
+              )
+            : restaurants
+          ).map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate("UserFoodItemsScreen", {
+                  restaurantId: item.restaurant_id,
+                  userId: userId,
+                  jwtToken,
+                })
+              }
+            >
+              <Image
+                source={{ uri: item.restaurant_image }}
+                style={styles.image}
+              />
+              <View style={styles.cardContent}>
+                <View style={styles.headerContainer}>
+                  <Text style={styles.restaurantName}>
+                    {item.restaurant_name}
+                  </Text>
+                  <View style={styles.ratingContainer}>
+                    <Text style={styles.ratingText}>4.5</Text>
+                    <Text style={styles.starIcon}>⭐</Text>
+                  </View>
+                </View>
+
+                <View style={styles.infoContainer}>
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoIcon}>📍</Text>
+                    <Text style={styles.infoText}>
+                      {item.restaurant_location}
+                    </Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoIcon}>⏰</Text>
+                    <Text style={styles.infoText}>30-40 min</Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoIcon}>🕒</Text>
+                    <Text style={styles.infoText}>Open 24/7</Text>
+                  </View>
+                </View>
+
+                <View style={styles.tagContainer}>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>Popular</Text>
+                  </View>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>Trending</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Add padding at bottom for navbar */}
+        <View style={{ height: 80 }} />
       </ScrollView>
 
       {/* Navbar - Outside ScrollView to stay fixed */}
@@ -425,436 +441,235 @@ const HomeScreen = ({ route }) => {
   );
 };
 
+// Styles - Black & White centric
 const styles = StyleSheet.create({
+  // Loading Components
   loaderContainer: {
     flex: 1,
-    backgroundColor: "#ff8c00",
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    // borderRadius: "70%",
   },
   loaderCircle: {
-    width: 200, // Adjust the size of the circle as needed
-    height: 200, // Keep width and height the same to create a circle
-    borderRadius: "50%", // Half of the width/height to make it circular
-    backgroundColor: "#fff",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: theme.colors.white,
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden", // Ensures that Lottie stays within the circle
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5, // Android shadow
+    overflow: "hidden",
+    ...theme.shadows.xl,
   },
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#ffff",
+
+  // Main Layout
+  mainContainer: { flex: 1, backgroundColor: theme.colors.background },
+  scrollContainer: { flex: 1 },
+  scrollContentContainer: {
+    paddingBottom: 100,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
   },
+
+  // Header
   title: {
-    fontSize: 30,
-    // marginTop: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#7f8c8d",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  listContainer: {
-    paddingBottom: 70,
-  },
-  card: {
-    flexDirection: "row",
-    marginBottom: 20,
-    backgroundColor: "#ffffff",
-    borderRadius: 15,
-    overflow: "hidden",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    height: 160,
+    fontSize: theme.fonts.sizes.hero,
+    fontWeight: theme.fonts.weights.black,
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
+    marginBottom: theme.spacing.xl,
   },
 
-  image: {
-    width: 130,
-    height: "100%",
-    borderRadius: 15,
-  },
-
-  cardContent: {
-    flex: 1,
-    padding: 12,
-    justifyContent: "space-between",
-    backgroundColor: "#ffffff",
-  },
-
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-
-  restaurantName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    flex: 1,
-  },
-
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f8ff",
-    padding: 4,
-    borderRadius: 8,
-  },
-
-  ratingText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginRight: 2,
-  },
-
-  starIcon: {
-    fontSize: 12,
-  },
-
-  infoContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-
-  locationIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-
-  location: {
-    fontSize: 14,
-    color: "#95a5a6",
-  },
-
-  additionalInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  infoIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-
-  infoText: {
-    fontSize: 12,
-    color: "#7f8c8d",
-  },
-
-  tagContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-
-  tag: {
-    backgroundColor: "#fff3e6",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ffd700",
-  },
-
-  tagText: {
-    fontSize: 12,
-    color: "#ff8c00",
-    fontWeight: "600",
-  },
-  mainContainer: {
-    flex: 1,
-    backgroundColor: "#ff8c00",
-  },
-
-  scrollContainer: {
-    flex: 1,
-  },
-
-  contentContainer: {
-    padding: 20,
-    // backgroundColor: "#ffffff",
-  },
-
-  restaurantList: {
-    marginTop: 10,
-  },
-
-  navbar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 10,
-    backgroundColor: "#ffffff",
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-  },
-
-  navItem: {
-    alignItems: "center",
-  },
-
-  icon: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: -4,
-  },
-
-  iconText: {
-    fontSize: 20,
-    color: "#ff8c00",
-  },
-
-  navText: {
-    color: "#333",
-    fontSize: 12,
-  },
-  error: {
-    color: "red",
-    fontSize: 18,
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 10,
-    color: "#333",
-  },
-
-  featuredContainer: {
-    height: 380,
-    marginBottom: 0,
-    // width:"90%"
-  },
-
+  // Featured horizontal cards
+  featuredContainer: { height: 280, marginBottom: theme.spacing.xl },
   featuredCard: {
-    width: 345,
-    height: 350,
-    marginHorizontal: 4,
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    width: 260,
+    height: 260,
+    marginRight: theme.spacing.lg,
+    borderRadius: theme.borderRadius.xxxl,
+    backgroundColor: theme.colors.white,
     overflow: "hidden",
+    ...theme.shadows.lg,
   },
-
-  featuredImage: {
-    width: "100%",
-    height: 240, // Larger image
-    resizeMode: "cover",
-  },
-
-  featuredContent: {
-    padding: 14,
-  },
-
-  featuredDetails: {
-    gap: 0,
-  },
-
+  featuredImage: { width: "100%", height: 160 },
+  featuredContent: { padding: theme.spacing.lg },
   featuredName: {
-    fontSize: 23,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 4,
-    marginLeft: 10,
+    fontSize: theme.fonts.sizes.xl,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
   },
-
   featuredFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: theme.spacing.md,
   },
-
   featuredRating: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f8ff",
-    padding: 6,
-    borderRadius: 12,
-    marginLeft: 10,
+    backgroundColor: theme.colors.black,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
-
+  ratingText: {
+    color: theme.colors.white,
+    fontWeight: theme.fonts.weights.bold,
+  },
+  starIcon: { color: theme.colors.white },
   featuredTag: {
-    backgroundColor: "#fff3e6",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ffd700",
-    marginRight: 10,
+    backgroundColor: theme.colors.textPrimary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
+  tagText: { color: theme.colors.white, fontWeight: theme.fonts.weights.bold },
 
-  paginationDots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    // color: "#ffffff",
-    // backgroundColor: "#ffffff",
-  },
-
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "600",
-    marginBottom: 15,
-    color: "#333",
-    paddingHorizontal: 10,
-  },
-  locationSection: {
-    marginBottom: 20,
-  },
-
-  locationContainer: {
-    flexDirection: "row",
-    paddingVertical: 10,
-  },
-
+  // Locations as pills
+  locationSection: { marginBottom: theme.spacing.xl },
+  locationScrollContent: { paddingVertical: theme.spacing.md },
   locationCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    padding: 12,
-    borderRadius: 15,
-    marginRight: 12,
-    minWidth: 120,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    backgroundColor: theme.colors.gray100,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.full,
+    marginRight: theme.spacing.md,
   },
-
-  selectedLocationCard: {
-    backgroundColor: "#fff3e6",
-    borderColor: "#ff8c00",
-    borderWidth: 2,
-  },
-
+  selectedLocationCard: { backgroundColor: theme.colors.black },
   locationIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    fontSize: theme.fonts.sizes.lg,
+    marginRight: theme.spacing.sm,
   },
-
   locationName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2c3e50",
+    fontSize: theme.fonts.sizes.md,
+    fontWeight: theme.fonts.weights.semibold,
+    color: theme.colors.textPrimary,
+  },
+  selectedLocationName: { color: theme.colors.white },
+
+  // Restaurant cards
+  restaurantList: { marginTop: theme.spacing.lg },
+  card: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.xxl,
+    marginBottom: theme.spacing.lg,
+    overflow: "hidden",
+    ...theme.shadows.md,
+  },
+  image: { width: "100%", height: 190 },
+  cardContent: { padding: theme.spacing.lg },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: theme.spacing.md,
+  },
+  restaurantName: {
+    fontSize: theme.fonts.sizes.xl,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.black,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+  },
+  infoContainer: { marginBottom: theme.spacing.md },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+  },
+  infoIcon: {
+    fontSize: theme.fonts.sizes.md,
+    marginRight: theme.spacing.sm,
+  },
+  infoText: {
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fonts.weights.medium,
+  },
+  tagContainer: { flexDirection: "row", gap: theme.spacing.sm },
+  tag: {
+    backgroundColor: theme.colors.textPrimary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
 
-  noRestaurantsContainer: {
-    flex: 1,
+  // Navbar (floating white)
+  navbar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: theme.colors.white,
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.xxl,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    ...theme.shadows.xl,
+  },
+  navItem: { alignItems: "center", padding: theme.spacing.sm },
+  icon: {
+    width: 48,
+    height: 48,
+    backgroundColor: theme.colors.gray100,
+    borderRadius: theme.borderRadius.xl,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
+    marginBottom: theme.spacing.xs,
   },
-
-  noRestaurantsText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+  iconText: {
+    fontSize: theme.fonts.sizes.xl,
+    color: theme.colors.textSecondary,
   },
-  locationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 15,
-    paddingHorizontal: 5,
+  navText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fonts.sizes.xs,
+    fontWeight: theme.fonts.weights.medium,
   },
-
-  currentLocation: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2c3e50",
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    backgroundColor: "#ffff",
-  },
-
-  headerText: {
-    fontSize: 20,
-    color: "#333",
-  },
-
-  accountIcon: {
-    fontSize: 20,
-    color: "#ffffff",
-  },
-
   cartBadge: {
     position: "absolute",
-    top: -5,
-    right: -5,
-    backgroundColor: "#ff4444",
-    borderRadius: 10,
+    top: -4,
+    right: -4,
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.borderRadius.full,
     minWidth: 20,
     height: 20,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#ffffff",
+    borderColor: theme.colors.white,
+  },
+  cartBadgeText: {
+    color: theme.colors.white,
+    fontSize: theme.fonts.sizes.xs,
+    fontWeight: theme.fonts.weights.bold,
   },
 
-  cartBadgeText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "bold",
+  // Error
+  container: {
+    flex: 1,
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  error: {
+    color: theme.colors.error,
+    fontSize: theme.fonts.sizes.lg,
+    textAlign: "center",
+    fontWeight: theme.fonts.weights.medium,
   },
 });
-// ...existing code...
 export default HomeScreen;

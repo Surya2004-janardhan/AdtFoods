@@ -10,6 +10,7 @@ import {
 import CONFIG from "../config";
 import Icon from "react-native-vector-icons/Ionicons";
 import LottieView from "lottie-react-native";
+import { theme } from "./modernTheme"; // Updated theme import
 
 const AccountScreen = ({ route }) => {
   const { jwtToken } = route.params;
@@ -125,89 +126,100 @@ const AccountScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  // Loading Components
   loaderContainer: {
     flex: 1,
-    backgroundColor: "#ff8c00",
+    backgroundColor: theme.colors.background,
     justifyContent: "center",
     alignItems: "center",
-    // borderRadius: "70%",
   },
   loaderCircle: {
-    width: 200, // Adjust the size of the circle as needed
-    height: 200, // Keep width and height the same to create a circle
-    borderRadius: 100, // Half of the width/height to make it circular
-    backgroundColor: "#fff",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: theme.colors.white,
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden", // Ensures that Lottie stays within the circle
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5, // Android shadow
+    overflow: "hidden",
+    ...theme.shadows.xl,
   },
+
+  // Main Layout
   container: {
     flex: 1,
-    backgroundColor: "#ff8c00",
+    backgroundColor: theme.colors.background,
   },
   headerContainer: {
     alignItems: "center",
-    backgroundColor: "#ff8c00",
-    paddingVertical: 30,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: theme.colors.background,
+    paddingVertical: theme.spacing.xxxl,
+    paddingHorizontal: theme.spacing.lg,
   },
   profilePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#a0a0a0",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: theme.colors.white,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.xl,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 10,
+    fontSize: theme.fonts.sizes.display,
+    fontWeight: theme.fonts.weights.black,
+    color: theme.colors.textPrimary,
+    textAlign: "center",
+    letterSpacing: -0.5,
   },
+
+  // Details Section
   detailsContainer: {
-    backgroundColor: "#fff",
-    margin: 15,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: theme.colors.white,
+    margin: theme.spacing.lg,
+    borderRadius: theme.borderRadius.xl,
+    overflow: "hidden",
+    ...theme.shadows.xl,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
+    padding: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: theme.colors.gray100,
   },
   detailTextContainer: {
     flex: 1,
-    marginLeft: 15,
+    marginLeft: theme.spacing.md,
   },
   detailLabel: {
-    fontSize: 14,
-    color: "#7f8c8d",
+    fontSize: theme.fonts.sizes.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    fontWeight: theme.fonts.weights.medium,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   detailValue: {
-    fontSize: 16,
-    color: "#2c3e50",
+    fontSize: theme.fonts.sizes.lg,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.fonts.weights.semibold,
+    lineHeight: theme.fonts.lineHeights.tight * theme.fonts.sizes.lg,
   },
+
+  // Error State
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.xl,
   },
   error: {
-    color: "red",
-    fontSize: 18,
+    color: theme.colors.error,
+    fontSize: theme.fonts.sizes.lg,
+    textAlign: "center",
+    fontWeight: theme.fonts.weights.medium,
   },
 });
 

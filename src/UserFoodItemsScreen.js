@@ -13,6 +13,7 @@ import {
 import CONFIG from "../config";
 import LottieView from "lottie-react-native";
 import { useCart } from "./CartContext";
+import { theme } from "./modernTheme";
 
 const UserFoodItemsScreen = ({ route, navigation }) => {
   const { userId: routeUserId, restaurantId, jwtToken } = route.params;
@@ -255,202 +256,170 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // Loading
   loaderContainer: {
     flex: 1,
-    backgroundColor: "#ff8c00", // Orange background
+    backgroundColor: theme.colors.background,
     justifyContent: "center",
     alignItems: "center",
   },
   loaderCircle: {
-    display: "flex",
-    width: 200, // size of the circle
+    width: 200,
     height: 200,
-    borderRadius: "50%",
-    backgroundColor: "#fff", // white circle background
+    borderRadius: 100,
+    backgroundColor: theme.colors.white,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8, // Android shadow
+    ...theme.shadows.xl,
   },
-  lottie: {
-    width: 290,
-    height: 420,
-    // justifyContent: "flex-start",
-    // alignItems: "top",
-    // position: "absolute",
-    // marginBottom:20
-    padding: 20,
-  },
+  lottie: { width: 290, height: 420, padding: theme.spacing.lg },
+
+  // Main
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#ff8c00",
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
   },
-  listContainer: {
-    paddingBottom: 80,
-  },
+  listContainer: { paddingBottom: 120 },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
+    fontSize: theme.fonts.sizes.hero,
+    fontWeight: theme.fonts.weights.black,
+    marginBottom: theme.spacing.lg,
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
   },
+
+  // Cards
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.xxl,
+    marginBottom: theme.spacing.lg,
+    overflow: "hidden",
+    ...theme.shadows.lg,
   },
   foodImage: {
     width: "100%",
     height: 200,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    resizeMode: "cover",
   },
   cardContent: {
-    padding: 15,
+    padding: theme.spacing.lg,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   foodName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: theme.fonts.sizes.xl,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
     flex: 1,
   },
   priceTag: {
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: theme.colors.gray100,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
   price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#ff8c00",
+    fontSize: theme.fonts.sizes.md,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
   },
   description: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 12,
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+    lineHeight: theme.fonts.sizes.md * 1.6,
   },
+
+  // Footer
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: theme.spacing.sm,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: theme.colors.black,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
   ratingText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: theme.fonts.sizes.sm,
+    color: theme.colors.white,
+    fontWeight: theme.fonts.weights.medium,
   },
   addButton: {
-    backgroundColor: "#ff8c00",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: theme.colors.black,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    ...theme.shadows.md,
   },
   addButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: theme.colors.white,
+    fontWeight: theme.fonts.weights.bold,
+    fontSize: theme.fonts.sizes.sm,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ff8c00",
-  },
-  loadingText: {
-    fontSize: 18,
-    color: "#666",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: 18,
-    color: "red",
-  },
+
+  // Bottom Floating Checkout
   bottomNavigation: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 10,
-    backgroundColor: "#ffff",
-    borderRadius: 0,
-    marginBottom: 0,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    justifyContent: "center",
+    paddingVertical: theme.spacing.md,
+    backgroundColor: "transparent",
     position: "absolute",
-    bottom: 0,
+    bottom: theme.spacing.lg,
     left: 0,
     right: 0,
   },
-
   navButton: {
     alignItems: "center",
   },
   iconContainer: {
     position: "relative",
     alignItems: "center",
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.black,
+    justifyContent: "center",
+    ...theme.shadows.xl,
   },
   navIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
-    marginBottom: -7,
-    lineHeight: 40,
-    fontSize: 20,
-    paddingLeft: 10,
+    fontSize: theme.fonts.sizes.xl,
+    color: theme.colors.white,
   },
   cartCountContainer: {
     position: "absolute",
-    top: -5,
-    right: -10,
-    backgroundColor: "#9370DB",
-    width: 24,
+    top: -6,
+    right: -6,
+    backgroundColor: theme.colors.error,
+    minWidth: 24,
     height: 24,
-    // color: "#fff",
-
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: theme.colors.white,
   },
   cartCountText: {
-    color: "lavender",
-    fontWeight: "bold",
-    fontSize: 14,
+    color: theme.colors.white,
+    fontWeight: theme.fonts.weights.bold,
+    fontSize: theme.fonts.sizes.xs,
   },
   navText: {
-    fontSize: 12,
-    color: "#333",
+    fontSize: theme.fonts.sizes.sm,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.fonts.weights.medium,
+    marginTop: theme.spacing.xs,
   },
 });
 

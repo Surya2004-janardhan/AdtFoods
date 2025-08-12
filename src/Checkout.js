@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useCart } from "./CartContext";
+import { theme } from "./modernTheme";
 
 const Checkout = ({ route, navigation }) => {
   const { userId, restaurantId, jwtToken } = route.params;
@@ -202,167 +203,183 @@ const Checkout = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // Main Layout
   container: {
     flex: 1,
-    backgroundColor: "#ff8c00", // Orange background to match app theme
-    padding: 16,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#fff", // White text on orange background
+    fontSize: theme.fonts.sizes.display,
+    fontWeight: theme.fonts.weights.black,
+    marginBottom: theme.spacing.lg,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
   },
+
+  // Cart Items
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: theme.spacing.lg,
   },
   cartItem: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.borderRadius.xl,
+    alignItems: "center",
+    ...theme.shadows.lg,
   },
   itemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 15,
+    width: 70,
+    height: 70,
+    borderRadius: theme.borderRadius.lg,
+    marginRight: theme.spacing.md,
   },
   itemDetails: {
     flex: 1,
-    justifyContent: "center",
+    paddingRight: theme.spacing.sm,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
+    fontSize: theme.fonts.sizes.lg,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+    lineHeight: theme.fonts.lineHeights.tight * theme.fonts.sizes.lg,
   },
   itemPrice: {
-    fontSize: 14,
-    color: "#ff8c00",
-    fontWeight: "bold",
-    marginBottom: 3,
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.fonts.weights.bold,
+    marginBottom: theme.spacing.xs,
   },
-  itemQuantity: {
-    fontSize: 12,
-    color: "#666",
-  },
+
+  // Quantity Controls
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
+    marginTop: theme.spacing.xs,
   },
   quantityButton: {
-    backgroundColor: "#ff8c00",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    backgroundColor: theme.colors.black,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 5,
+    marginHorizontal: theme.spacing.xs,
+    ...theme.shadows.sm,
   },
   quantityButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: theme.colors.white,
+    fontSize: theme.fonts.sizes.lg,
+    fontWeight: theme.fonts.weights.bold,
   },
   quantityDisplay: {
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 15,
-    marginHorizontal: 5,
+    backgroundColor: theme.colors.gray100,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+    marginHorizontal: theme.spacing.xs,
   },
   quantityText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: theme.fonts.sizes.md,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
   },
   removeButton: {
-    backgroundColor: "#ff4444",
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+    backgroundColor: theme.colors.error,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center",
+    ...theme.shadows.md,
   },
   removeButtonText: {
-    fontSize: 16,
+    fontSize: theme.fonts.sizes.md,
   },
+
+  // Empty Cart State
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: theme.spacing.xl,
   },
   emptyText: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 20,
+    fontSize: theme.fonts.sizes.xl,
+    color: theme.colors.white,
+    marginBottom: theme.spacing.xl,
+    textAlign: "center",
+    fontWeight: theme.fonts.weights.medium,
   },
   continueButton: {
-    backgroundColor: "#ff8c00",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: theme.colors.black,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.lg,
   },
   continueButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: theme.colors.white,
+    fontWeight: theme.fonts.weights.bold,
+    fontSize: theme.fonts.sizes.md,
   },
+
+  // Summary Section
   summaryContainer: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    marginTop: 10,
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.xl,
+    marginTop: theme.spacing.md,
+    ...theme.shadows.xl,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
+    alignItems: "center",
   },
   summaryText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fonts.weights.medium,
   },
   summaryValue: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "bold",
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.fonts.weights.bold,
   },
   divider: {
     height: 1,
-    backgroundColor: "#ddd",
-    marginVertical: 10,
+    backgroundColor: theme.colors.gray200,
+    marginVertical: theme.spacing.md,
   },
   totalText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: theme.fonts.sizes.lg,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
   },
   totalValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ff8c00",
+    fontSize: theme.fonts.sizes.lg,
+    fontWeight: theme.fonts.weights.bold,
+    color: theme.colors.textPrimary,
   },
+
+  // Place Order Button
   placeOrderButton: {
-    backgroundColor: "#ff8c00",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: theme.colors.black,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
     alignItems: "center",
-    marginTop: 15,
+    marginTop: theme.spacing.lg,
+    ...theme.shadows.lg,
   },
   placeOrderText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: theme.colors.white,
+    fontSize: theme.fonts.sizes.lg,
+    fontWeight: theme.fonts.weights.bold,
   },
 });
 
