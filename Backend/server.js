@@ -214,16 +214,18 @@ app.put("/food-items/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/restaurants", verifyJWT, async (req, res) => {
+app.get("/restaurants", async (req, res) => {
   const restaurants = await Restaurant.find({});
   // console.log(restaurants);
   res.json(restaurants);
 });
 
-app.get("/food-items/:restaurantId", verifyJWT, async (req, res) => {
+app.get("/food-items/:restaurantId", async (req, res) => {
   try {
     const { restaurantId } = req.params;
+    console.log("Fetching food items for restaurant:", restaurantId);
     const items = await FoodItem.find({ restaurant_id: restaurantId });
+    console.log("Found items:", items.length);
     res.json(items);
   } catch (error) {
     console.error("Error fetching food items:", error);
@@ -232,7 +234,7 @@ app.get("/food-items/:restaurantId", verifyJWT, async (req, res) => {
 });
 
 // Cart routes
-app.get("/user-cart-items", verifyJWT, async (req, res) => {
+app.get("/user-cart-items", async (req, res) => {
   try {
     const { userId } = req.query;
     console.log("Fetching cart items for userId:", userId);
@@ -247,7 +249,7 @@ app.get("/user-cart-items", verifyJWT, async (req, res) => {
   }
 });
 
-app.post("/usercart/add-item", verifyJWT, async (req, res) => {
+app.post("/usercart/add-item", async (req, res) => {
   try {
     const {
       userId,
@@ -294,7 +296,7 @@ app.post("/usercart/add-item", verifyJWT, async (req, res) => {
 });
 
 // Add cart increment/decrement routes
-app.post("/usercart/increment-item", verifyJWT, async (req, res) => {
+app.post("/usercart/increment-item", async (req, res) => {
   try {
     const { userId, itemId } = req.body;
 
@@ -307,7 +309,7 @@ app.post("/usercart/increment-item", verifyJWT, async (req, res) => {
   }
 });
 
-app.post("/usercart/decrement-item", verifyJWT, async (req, res) => {
+app.post("/usercart/decrement-item", async (req, res) => {
   try {
     const { userId, itemId } = req.body;
 
@@ -333,7 +335,7 @@ app.post("/usercart/decrement-item", verifyJWT, async (req, res) => {
 });
 
 // Add delete items route
-app.post("/delete-items", verifyJWT, async (req, res) => {
+app.post("/delete-items", async (req, res) => {
   try {
     const { userId, restaurantId } = req.body;
 

@@ -71,6 +71,9 @@ const HomeScreen = ({ route }) => {
         setLocations(uniqueLocations);
         setLoading(false);
       } catch (error) {
+        console.error("Error fetching restaurants:", error);
+        console.log("JWT Token:", jwtToken ? "Present" : "Missing");
+        console.log("API URL:", `${CONFIG.API_BASE_URL}/restaurants`);
         setError("Failed to fetch data");
         setLoading(false);
       }

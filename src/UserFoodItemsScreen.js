@@ -18,18 +18,36 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
 
   // Extract userId from route params or decode from JWT as fallback
   const userId = React.useMemo(() => {
-    if (routeUserId) return routeUserId;
+    console.log("Route params:", route.params);
+    console.log("routeUserId:", routeUserId);
+    console.log("jwtToken present:", !!jwtToken);
+
+    if (routeUserId) {
+      console.log("Using routeUserId:", routeUserId);
+      return routeUserId;
+    }
     if (jwtToken) {
       try {
         const payload = JSON.parse(atob(jwtToken.split(".")[1]));
+        console.log("Decoded JWT payload:", payload);
         return payload.user_id;
       } catch (error) {
         console.error("Error decoding JWT in UserFoodItemsScreen:", error);
         return null;
       }
     }
+    console.log("No userId found");
     return null;
   }, [routeUserId, jwtToken]);
+
+  console.log(
+    "UserFoodItemsScreen - userId:",
+    userId,
+    "restaurantId:",
+    restaurantId,
+    "jwtToken:",
+    jwtToken ? "Present" : "Missing"
+  );
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,7 +79,12 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        // console.log(restaurantId);
+        console.log("Fetching items for restaurantId:", restaurantId);
+        console.log(
+          "Using API URL:",
+          `${CONFIG.API_BASE_URL}/food-items/${restaurantId}`
+        );
+
         const response = await fetch(
           `${CONFIG.API_BASE_URL}/food-items/${restaurantId}`,
           {
@@ -72,13 +95,18 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
             },
           }
         );
+
+        console.log("Response status:", response.status);
+
         if (!response.ok) {
           throw new Error("Failed to fetch items");
         }
         const data = await response.json();
         console.log("Fetched food items:", data);
+        console.log("Number of items:", data.length);
         setItems(data);
       } catch (err) {
+        console.error("Error in fetchItems:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -87,6 +115,12 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
 
     const fetchCartItems = async () => {
       try {
+        console.log("Fetching cart items for userId:", userId);
+        console.log(
+          "Cart API URL:",
+          `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`
+        );
+
         const response = await fetch(
           `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`,
           {
@@ -102,18 +136,22 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
         }
 
         const cartData = await response.json();
+        console.log("Received cart data:", cartData);
 
         // Filter by current restaurantId
         const filteredCartData = cartData.filter(
           (item) => item.restaurant_id === restaurantId
         );
+        console.log("Filtered cart data for restaurant:", filteredCartData);
 
         const totalItems = filteredCartData.reduce(
           (total, item) => total + item.quantity,
           0
         );
+        console.log("Total cart items:", totalItems);
         setCartItemCount(totalItems);
       } catch (err) {
+        console.error("Error in fetchCartItems:", err);
         setError(err.message);
       }
     };
