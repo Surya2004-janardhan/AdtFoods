@@ -75,6 +75,7 @@ app.get("/food-items", verifyJWT, async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
+  console.log("calledd here singup ");
   const { user_id, name, password, email, phone_number } = req.body;
   if (!user_id || !name || !password || !email || !phone_number)
     return res.status(400).json({ error: "All fields are required" });

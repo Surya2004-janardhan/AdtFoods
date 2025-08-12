@@ -385,6 +385,7 @@ const Login = ({ navigation }) => {
   const [token, setToken] = useState(null);
   const [user_id, setId] = useState("");
   const [user_name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone_number, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -434,6 +435,7 @@ const Login = ({ navigation }) => {
   }, [navigation, token]);
 
   const handleLogin = async () => {
+    console.log("inside of login");
     if (!user_id || !password) {
       Toast.show({
         type: "error",
@@ -505,8 +507,7 @@ const Login = ({ navigation }) => {
   };
   const handleRegister = async () => {
     console.log("inside of register");
-
-    if (!user_id || !user_name || !password || !phone_number) {
+    if (!user_id || !user_name || !password || !phone_number || !email) {
       Toast.show({
         type: "error",
         text1: "Validation Error",
@@ -515,21 +516,24 @@ const Login = ({ navigation }) => {
       });
       return;
     }
-    setLoading(true); // start loading
-
+    // setLoading(true); // start loading
     try {
       console.log("inside the fetch of register");
-      const response = await fetch(`${CONFIG.API_BASE_URL}/register`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, user_name, password, phone_number }),
+        body: JSON.stringify({
+          user_id,
+          name: user_name,
+          password,
+          email,
+          phone_number,
+        }),
       });
-
       const data = await response.json();
       console.log("Response status:", response.status);
       console.log("Response data:", data);
-
-      if (response.ok && data.message?.toLowerCase().includes("successfully")) {
+      if (response.ok && data.success) {
         Toast.show({
           type: "success",
           text1: "Registration Successful",
@@ -578,21 +582,40 @@ const Login = ({ navigation }) => {
           <View style={styles.formContainer}>
             <View style={styles.inputWrapper}>
               {isRegistering && (
-                <View style={styles.inputContainer}>
-                  <Icon
-                    name="person-circle-outline"
-                    size={24}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="Full Name"
-                    value={user_name}
-                    onChangeText={setName}
-                    style={styles.input}
-                    placeholderTextColor="#999"
-                  />
-                </View>
+                <>
+                  <View style={styles.inputContainer}>
+                    <Icon
+                      name="person-circle-outline"
+                      size={24}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Full Name"
+                      value={user_name}
+                      onChangeText={setName}
+                      style={styles.input}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <Icon
+                      name="mail-outline"
+                      size={24}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Email"
+                      value={email}
+                      onChangeText={setEmail}
+                      style={styles.input}
+                      placeholderTextColor="#999"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                    />
+                  </View>
+                </>
               )}
 
               <View style={styles.inputContainer}>
