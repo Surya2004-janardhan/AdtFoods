@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import jwt_decode from "jwt-decode";
 import {
   View,
   Text,
@@ -16,13 +15,19 @@ const AccountScreen = ({ route }) => {
   const { jwtToken } = route.params;
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
 
-  useEffect(() => {
-    if (!jwtToken) return;
-    // Decode userId from JWT
-    const decoded = jwt_decode(jwtToken);
-    setUserId(decoded.user_id);
+  // Extract userId from JWT token using the same logic as other screens
+  const userId = React.useMemo(() => {
+    if (jwtToken) {
+      try {
+        const payload = JSON.parse(atob(jwtToken.split(".")[1]));
+        return payload.user_id;
+      } catch (error) {
+        console.error("Error decoding JWT:", error);
+        return null;
+      }
+    }
+    return null;
   }, [jwtToken]);
 
   useEffect(() => {
