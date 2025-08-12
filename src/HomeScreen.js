@@ -44,6 +44,7 @@ const HomeScreen = ({ route }) => {
           throw new Error("Failed to fetch restaurants");
         }
         let data = await response.json();
+        // console.log(data);
         // Map backend fields to frontend expected fields
         data = data.map((item) => ({
           ...item,

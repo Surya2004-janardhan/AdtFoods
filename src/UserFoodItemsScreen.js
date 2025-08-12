@@ -35,6 +35,15 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
   // Animation value for card scaling
   const scaleValue = new Animated.Value(1);
 
+  // Helper function to get price value safely
+  const getPrice = (priceObj) => {
+    if (!priceObj && priceObj !== 0) return "0";
+    if (typeof priceObj === "number") return priceObj.toString();
+    if (typeof priceObj === "string") return priceObj;
+    if (priceObj.$numberDecimal) return priceObj.$numberDecimal;
+    return "0";
+  };
+
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -46,6 +55,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
           throw new Error("Failed to fetch items");
         }
         const data = await response.json();
+        console.log("Fetched food items:", data);
         setItems(data);
       } catch (err) {
         setError(err.message);
@@ -110,7 +120,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
           userId: userId,
           itemId: item.item_id,
           itemName: item.name,
-          price: item.price.$numberDecimal,
+          price: getPrice(item.price),
           imageUrl: item.image_url,
           restaurantId: restaurantId,
           quantity: 1,
@@ -154,7 +164,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.priceTag}>
             <Text style={styles.price}>
-              ₹{parseFloat(item.price.$numberDecimal)}
+              ₹{parseFloat(getPrice(item.price))}
             </Text>
           </View>
         </View>

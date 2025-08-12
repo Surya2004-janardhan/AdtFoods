@@ -49,11 +49,23 @@ const foodItemSchema = new mongoose.Schema({
 });
 const restaurantSchema = new mongoose.Schema({}, { strict: false });
 
+// Add cart schema
+const cartSchema = new mongoose.Schema({
+  userId: String,
+  itemId: String,
+  itemName: String,
+  price: String,
+  imageUrl: String,
+  restaurant_id: String,
+  quantity: Number,
+});
+
 const FoodItem = mongoose.model("fooditems", foodItemSchema);
 const User = mongoose.model("users", userSchema);
 const Order = mongoose.model("orders", orderSchema);
 const Restaurant = mongoose.model("restaurants", restaurantSchema);
 const Token = mongoose.model("tokens", tokensschema);
+const Cart = mongoose.model("carts", cartSchema);
 
 // ✅ JWT middleware
 function verifyJWT(req, res, next) {
@@ -177,7 +189,7 @@ app.get("/orders", verifyJWT, async (req, res) => {
   }
 });
 
-app.put("/food-items/:id", verifyJWT, async (req, res) => {
+app.put("/food-items/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const { available } = req.body;
   if (typeof available !== "boolean")
@@ -191,6 +203,70 @@ app.get("/restaurants", async (req, res) => {
   const restaurants = await Restaurant.find({});
   // console.log(restaurants);
   res.json(restaurants);
+});
+
+app.get("/food-items/:restaurantId", async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+    const items = await FoodItem.find({ restaurant_id: restaurantId });
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching food items:", error);
+    res.status(500).json({ error: "Failed to fetch food items" });
+  }
+});
+
+// Cart routes
+app.get("/user-cart-items", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const cartItems = await Cart.find({ userId });
+    res.json(cartItems);
+  } catch (error) {
+    console.error("Error fetching cart items:", error);
+    res.status(500).json({ error: "Failed to fetch cart items" });
+  }
+});
+
+app.post("/usercart/add-item", async (req, res) => {
+  try {
+    const {
+      userId,
+      itemId,
+      itemName,
+      price,
+      imageUrl,
+      restaurantId,
+      quantity,
+    } = req.body;
+
+    // Check if item already exists in cart
+    const existingItem = await Cart.findOne({ userId, itemId });
+
+    if (existingItem) {
+      // Update quantity
+      await Cart.updateOne(
+        { userId, itemId },
+        { $inc: { quantity: quantity || 1 } }
+      );
+    } else {
+      // Add new item
+      await Cart.create({
+        userId,
+        itemId,
+        itemName,
+        price,
+        imageUrl,
+        restaurant_id: restaurantId,
+        quantity: quantity || 1,
+      });
+    }
+
+    res.json({ success: true, message: "Item added to cart" });
+  } catch (error) {
+    console.error("Error adding item to cart:", error);
+    res.status(500).json({ error: "Failed to add item to cart" });
+  }
 });
 
 app.post("/place-order", verifyJWT, async (req, res) => {

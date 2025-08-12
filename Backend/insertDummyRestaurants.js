@@ -8,27 +8,30 @@ const Restaurant = mongoose.model("restaurants", restaurantSchema);
 
 const dummyRestaurants = [
   {
+    restaurant_id: "rest001",
     name: "Spicy Bites",
     address: "123 Main St, Hyderabad",
     cuisine: "Indian",
     rating: 4.5,
-    image: "https://example.com/images/spicybites.jpg",
+    image: "https://images.unsplash.com/photo-1552566965-6e6be3b0010b?w=400",
     isOpen: true,
   },
   {
+    restaurant_id: "rest002",
     name: "Pizza Palace",
     address: "456 Park Ave, Hyderabad",
     cuisine: "Italian",
     rating: 4.2,
-    image: "https://example.com/images/pizzapalace.jpg",
-    isOpen: false,
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
+    isOpen: true,
   },
   {
+    restaurant_id: "rest003",
     name: "Sushi World",
     address: "789 Lake Rd, Hyderabad",
     cuisine: "Japanese",
     rating: 4.8,
-    image: "https://example.com/images/sushiworld.jpg",
+    image: "https://images.unsplash.com/photo-1579027989536-b7b1f875659b?w=400",
     isOpen: true,
   },
 ];
@@ -36,6 +39,10 @@ const dummyRestaurants = [
 async function insertRestaurants() {
   try {
     await mongoose.connect(uri);
+
+    // Clear existing restaurants first
+    await Restaurant.deleteMany({});
+
     await Restaurant.insertMany(dummyRestaurants);
     console.log("Dummy restaurants inserted successfully!");
     mongoose.disconnect();
