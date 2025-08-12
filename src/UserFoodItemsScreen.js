@@ -63,7 +63,14 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
       try {
         // console.log(restaurantId);
         const response = await fetch(
-          `${CONFIG.API_BASE_URL}/food-items/${restaurantId}`
+          `${CONFIG.API_BASE_URL}/food-items/${restaurantId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+            },
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch items");
@@ -81,7 +88,14 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
     const fetchCartItems = async () => {
       try {
         const response = await fetch(
-          `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`
+          `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+            },
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch cart items");
@@ -132,6 +146,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
         },
         body: JSON.stringify({
           userId: userId,
@@ -229,7 +244,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
       <View style={styles.bottomNavigation}>
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate("Checkout", { userId, restaurantId })
+            navigation.navigate("Checkout", { userId, restaurantId, jwtToken })
           }
           style={styles.navButton}
         >

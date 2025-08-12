@@ -18,7 +18,7 @@ const { width, height } = Dimensions.get("window");
 
 const Orders = () => {
   const route = useRoute();
-  const { userId } = route.params;
+  const { userId, jwtToken } = route.params;
   const [orders, setOrders] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +44,14 @@ const Orders = () => {
   const fetchRestaurants = async () => {
     console.log("inside of restaurant fetch");
     try {
-      console.log("inside of try ")
-      const res = await fetch(`${CONFIG.API_BASE_URL}/restaurants`);
+      console.log("inside of try ");
+      const res = await fetch(`${CONFIG.API_BASE_URL}/restaurants`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+        },
+      });
       const data = await res.json();
       // console.log(res, "data");
       setRestaurants(data);
@@ -60,7 +66,13 @@ const Orders = () => {
   // console.log(restaurants);
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${CONFIG.API_BASE_URL}/orders`);
+      const res = await fetch(`${CONFIG.API_BASE_URL}/orders`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+        },
+      });
       const data = await res.json();
 
       if (Array.isArray(data)) {

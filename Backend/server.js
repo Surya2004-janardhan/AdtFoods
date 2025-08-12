@@ -189,6 +189,21 @@ app.get("/orders", verifyJWT, async (req, res) => {
   }
 });
 
+// Get user data by ID
+app.get("/users/:userId", verifyJWT, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findOne({ user_id: userId }).select("-password"); // Exclude password
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Failed to fetch user data" });
+  }
+});
+
 app.put("/food-items/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const { available } = req.body;
@@ -199,13 +214,13 @@ app.put("/food-items/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/restaurants", async (req, res) => {
+app.get("/restaurants", verifyJWT, async (req, res) => {
   const restaurants = await Restaurant.find({});
   // console.log(restaurants);
   res.json(restaurants);
 });
 
-app.get("/food-items/:restaurantId", async (req, res) => {
+app.get("/food-items/:restaurantId", verifyJWT, async (req, res) => {
   try {
     const { restaurantId } = req.params;
     const items = await FoodItem.find({ restaurant_id: restaurantId });
@@ -217,7 +232,7 @@ app.get("/food-items/:restaurantId", async (req, res) => {
 });
 
 // Cart routes
-app.get("/user-cart-items", async (req, res) => {
+app.get("/user-cart-items", verifyJWT, async (req, res) => {
   try {
     const { userId } = req.query;
     console.log("Fetching cart items for userId:", userId);
@@ -232,7 +247,7 @@ app.get("/user-cart-items", async (req, res) => {
   }
 });
 
-app.post("/usercart/add-item", async (req, res) => {
+app.post("/usercart/add-item", verifyJWT, async (req, res) => {
   try {
     const {
       userId,
@@ -279,7 +294,7 @@ app.post("/usercart/add-item", async (req, res) => {
 });
 
 // Add cart increment/decrement routes
-app.post("/usercart/increment-item", async (req, res) => {
+app.post("/usercart/increment-item", verifyJWT, async (req, res) => {
   try {
     const { userId, itemId } = req.body;
 
@@ -292,7 +307,7 @@ app.post("/usercart/increment-item", async (req, res) => {
   }
 });
 
-app.post("/usercart/decrement-item", async (req, res) => {
+app.post("/usercart/decrement-item", verifyJWT, async (req, res) => {
   try {
     const { userId, itemId } = req.body;
 
@@ -318,7 +333,7 @@ app.post("/usercart/decrement-item", async (req, res) => {
 });
 
 // Add delete items route
-app.post("/delete-items", async (req, res) => {
+app.post("/delete-items", verifyJWT, async (req, res) => {
   try {
     const { userId, restaurantId } = req.body;
 

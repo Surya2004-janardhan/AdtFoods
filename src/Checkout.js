@@ -19,8 +19,7 @@ import CONFIG from "../config";
 import LottieView from "lottie-react-native";
 
 const Checkout = ({ route, navigation }) => {
-  const { userId } = route.params || {};
-  const { restaurantId } = route.params;
+  const { userId, restaurantId, jwtToken } = route.params || {};
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loader, setLoader] = useState(false);
@@ -53,7 +52,14 @@ const Checkout = ({ route, navigation }) => {
       );
 
       const response = await fetch(
-        `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`
+        `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+          },
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch cart items");
@@ -101,6 +107,7 @@ const Checkout = ({ route, navigation }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
         },
         body: JSON.stringify({ userId, restaurantId }),
       });
@@ -160,6 +167,7 @@ const Checkout = ({ route, navigation }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
         },
         body: JSON.stringify({ userId, itemId, restaurantId }),
       });
@@ -239,6 +247,7 @@ const Checkout = ({ route, navigation }) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
             },
             body: JSON.stringify(orderData),
           });
@@ -272,7 +281,7 @@ const Checkout = ({ route, navigation }) => {
                 index: 1,
                 routes: [
                   { name: "HomeScreen", params: { userId } },
-                  { name: "Orders", params: { userId } },
+                  { name: "Orders", params: { userId, jwtToken } },
                 ],
               });
 
