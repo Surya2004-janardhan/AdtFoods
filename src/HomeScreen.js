@@ -18,8 +18,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const HomeScreen = ({ route }) => {
   const { jwtToken } = route.params || {};
 
-  // const { userId } = route.params;
-  // const { deviceToken } = route.params;
+  // Extract userId from JWT token
+  const userId = React.useMemo(() => {
+    if (jwtToken) {
+      try {
+        const payload = JSON.parse(atob(jwtToken.split(".")[1]));
+        return payload.user_id;
+      } catch (error) {
+        console.error("Error decoding JWT:", error);
+        return null;
+      }
+    }
+    return null;
+  }, [jwtToken]);
   const [restaurants, setRestaurants] = useState([]);
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +155,7 @@ const HomeScreen = ({ route }) => {
                 onPress={() =>
                   navigation.navigate("UserFoodItemsScreen", {
                     restaurantId: item.restaurant_id,
+                    userId: userId,
                     jwtToken,
                   })
                 }
@@ -239,6 +251,7 @@ const HomeScreen = ({ route }) => {
                 onPress={() =>
                   navigation.navigate("UserFoodItemsScreen", {
                     restaurantId: item.restaurant_id,
+                    userId: userId,
                     jwtToken,
                   })
                 }

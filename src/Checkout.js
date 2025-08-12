@@ -45,6 +45,13 @@ const Checkout = ({ route, navigation }) => {
 
   const fetchCartItems = async () => {
     try {
+      console.log(
+        "Fetching cart items for userId:",
+        userId,
+        "restaurantId:",
+        restaurantId
+      );
+
       const response = await fetch(
         `${CONFIG.API_BASE_URL}/user-cart-items?userId=${userId}`
       );
@@ -52,15 +59,18 @@ const Checkout = ({ route, navigation }) => {
         throw new Error("Failed to fetch cart items");
       }
       const data = await response.json();
+      console.log("Received cart data:", data);
 
       // ✅ Filter items only for the current restaurant
       const filteredData = data.filter(
         (item) => item.restaurant_id === restaurantId
       );
+      console.log("Filtered cart data for restaurant:", filteredData);
 
       setCartItems(filteredData);
       setLoading(false);
     } catch (error) {
+      console.error("Error in fetchCartItems:", error);
       Alert.alert("Error", error.message);
     }
   };
@@ -286,24 +296,24 @@ const Checkout = ({ route, navigation }) => {
   const renderItem = ({ item }) => (
     <Animated.View style={[styles.cartItem, { opacity: fadeAnim }]}>
       <Image
-        source={{ uri: item.image_url }}
+        source={{ uri: item.imageUrl }}
         style={styles.itemImage}
         resizeMode="cover"
       />
       <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.item_name}</Text>
+        <Text style={styles.itemName}>{item.itemName}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
         <View style={styles.quantityContainer}>
           <TouchableOpacity
             style={styles.quantityButton}
-            onPress={() => handleQuantityChange(item.item_id, "decrease")}
+            onPress={() => handleQuantityChange(item.itemId, "decrease")}
           >
             <Text style={styles.quantityButtonText}>-</Text>
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
           <TouchableOpacity
             style={styles.quantityButton}
-            onPress={() => handleQuantityChange(item.item_id, "increase")}
+            onPress={() => handleQuantityChange(item.itemId, "increase")}
           >
             <Text style={styles.quantityButtonText}>+</Text>
           </TouchableOpacity>
@@ -322,7 +332,7 @@ const Checkout = ({ route, navigation }) => {
         <FlatList
           data={cartItems}
           renderItem={renderItem}
-          keyExtractor={(item) => item.item_id}
+          keyExtractor={(item) => item.itemId}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
         />

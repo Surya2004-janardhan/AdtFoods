@@ -14,8 +14,22 @@ import CONFIG from "../config";
 import LottieView from "lottie-react-native";
 
 const UserFoodItemsScreen = ({ route, navigation }) => {
-  const { userId } = route.params;
-  const { restaurantId } = route.params;
+  const { userId: routeUserId, restaurantId, jwtToken } = route.params;
+
+  // Extract userId from route params or decode from JWT as fallback
+  const userId = React.useMemo(() => {
+    if (routeUserId) return routeUserId;
+    if (jwtToken) {
+      try {
+        const payload = JSON.parse(atob(jwtToken.split(".")[1]));
+        return payload.user_id;
+      } catch (error) {
+        console.error("Error decoding JWT in UserFoodItemsScreen:", error);
+        return null;
+      }
+    }
+    return null;
+  }, [routeUserId, jwtToken]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -110,7 +124,10 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
     ]).start();
 
     try {
-      console.log(item.item_id);
+      console.log("Item being added to cart:", item);
+      console.log("Item ID:", item._id);
+      console.log("Restaurant ID:", restaurantId);
+
       const response = await fetch(`${CONFIG.API_BASE_URL}/usercart/add-item`, {
         method: "POST",
         headers: {
@@ -118,7 +135,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
         },
         body: JSON.stringify({
           userId: userId,
-          itemId: item.item_id,
+          itemId: item._id,
           itemName: item.name,
           price: getPrice(item.price),
           imageUrl: item.image_url,
@@ -203,7 +220,7 @@ const UserFoodItemsScreen = ({ route, navigation }) => {
       <Text style={styles.title}>Menu</Text>
       <FlatList
         data={items}
-        keyExtractor={(item) => item.item_id}
+        keyExtractor={(item) => item._id}
         renderItem={renderFoodItem}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}

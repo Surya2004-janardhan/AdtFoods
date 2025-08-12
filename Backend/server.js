@@ -220,7 +220,11 @@ app.get("/food-items/:restaurantId", async (req, res) => {
 app.get("/user-cart-items", async (req, res) => {
   try {
     const { userId } = req.query;
+    console.log("Fetching cart items for userId:", userId);
+
     const cartItems = await Cart.find({ userId });
+    console.log("Found cart items:", cartItems);
+
     res.json(cartItems);
   } catch (error) {
     console.error("Error fetching cart items:", error);
@@ -240,8 +244,11 @@ app.post("/usercart/add-item", async (req, res) => {
       quantity,
     } = req.body;
 
+    console.log("Received cart add request:", req.body);
+
     // Check if item already exists in cart
     const existingItem = await Cart.findOne({ userId, itemId });
+    console.log("Existing item:", existingItem);
 
     if (existingItem) {
       // Update quantity
@@ -249,9 +256,10 @@ app.post("/usercart/add-item", async (req, res) => {
         { userId, itemId },
         { $inc: { quantity: quantity || 1 } }
       );
+      console.log("Updated existing item quantity");
     } else {
       // Add new item
-      await Cart.create({
+      const newCartItem = await Cart.create({
         userId,
         itemId,
         itemName,
@@ -260,12 +268,66 @@ app.post("/usercart/add-item", async (req, res) => {
         restaurant_id: restaurantId,
         quantity: quantity || 1,
       });
+      console.log("Created new cart item:", newCartItem);
     }
 
     res.json({ success: true, message: "Item added to cart" });
   } catch (error) {
     console.error("Error adding item to cart:", error);
     res.status(500).json({ error: "Failed to add item to cart" });
+  }
+});
+
+// Add cart increment/decrement routes
+app.post("/usercart/increment-item", async (req, res) => {
+  try {
+    const { userId, itemId } = req.body;
+
+    await Cart.updateOne({ userId, itemId }, { $inc: { quantity: 1 } });
+
+    res.json({ success: true, message: "Item quantity increased" });
+  } catch (error) {
+    console.error("Error incrementing item:", error);
+    res.status(500).json({ error: "Failed to increment item" });
+  }
+});
+
+app.post("/usercart/decrement-item", async (req, res) => {
+  try {
+    const { userId, itemId } = req.body;
+
+    const item = await Cart.findOne({ userId, itemId });
+
+    if (!item) {
+      return res.status(404).json({ error: "Item not found in cart" });
+    }
+
+    if (item.quantity <= 1) {
+      // Remove item if quantity becomes 0
+      await Cart.deleteOne({ userId, itemId });
+    } else {
+      // Decrease quantity
+      await Cart.updateOne({ userId, itemId }, { $inc: { quantity: -1 } });
+    }
+
+    res.json({ success: true, message: "Item quantity decreased" });
+  } catch (error) {
+    console.error("Error decrementing item:", error);
+    res.status(500).json({ error: "Failed to decrement item" });
+  }
+});
+
+// Add delete items route
+app.post("/delete-items", async (req, res) => {
+  try {
+    const { userId, restaurantId } = req.body;
+
+    await Cart.deleteMany({ userId, restaurant_id: restaurantId });
+
+    res.json({ success: true, message: "Cart items deleted" });
+  } catch (error) {
+    console.error("Error deleting cart items:", error);
+    res.status(500).json({ error: "Failed to delete cart items" });
   }
 });
 
