@@ -9,7 +9,7 @@ export default function Layout() {
       <OrdersProvider>
         <Stack
           screenOptions={{
-            headerShown: false, // 👈 this hides headers globally
+            headerShown: false, //  this hides headers globally
           }}
         >
           <Stack.Screen name="index" options={{ title: "Home" }} />
