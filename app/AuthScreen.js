@@ -30,37 +30,49 @@ const InputField = ({
   isPassword = false,
   showPassword,
   setShowPassword,
+  placeholder,
 }) => {
   return (
-    <View className="mb-6">
-      <Text className="text-sm font-poppins-medium text-gray-700 mb-2">
+    <View className="mb-3">
+      <Text
+        className="text-xs text-gray-600 mb-1.5"
+        style={{ fontFamily: "Poppins-Medium" }}
+      >
         {label}
       </Text>
-      <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4">
+      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-2.5 shadow-sm">
         <MaterialCommunityIcons
           name={icon}
-          size={20}
+          size={16}
           color="#FF6B00"
-          className="mr-3"
+          style={{ marginRight: 8 }}
         />
         <TextInput
-          className="flex-1 text-base font-poppins text-gray-800"
+          className="flex-1 text-sm text-gray-800"
+          style={{ fontFamily: "Poppins-Regular", minHeight: 18 }}
           value={value}
           onChangeText={setValue}
           keyboardType={keyboardType}
           secureTextEntry={isPassword && !showPassword}
-          placeholder={`Enter your ${label.toLowerCase()}`}
-          placeholderTextColor="#999999"
+          placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          placeholderTextColor="#9CA3AF"
+          autoCapitalize={
+            isPassword
+              ? "none"
+              : keyboardType === "email-address"
+              ? "none"
+              : "words"
+          }
         />
         {isPassword && (
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            className="ml-2"
+            className="p-1"
           >
             <Feather
               name={showPassword ? "eye" : "eye-off"}
-              size={20}
-              color="#666666"
+              size={14}
+              color="#6B7280"
             />
           </TouchableOpacity>
         )}
@@ -176,31 +188,62 @@ const AuthScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      className="flex-1 bg-gray-50"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 justify-center px-6 py-10">
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 20,
+          paddingVertical: 30,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="flex-1 justify-center min-h-full">
           {/* Logo Section */}
-          <View className="items-center mb-12">
-            <View className="w-20 h-20 bg-orange-500 rounded-full items-center justify-center mb-4 shadow-lg">
+          <View className="items-center mb-6">
+            <View className="w-16 h-16 bg-orange-500 rounded-2xl items-center justify-center mb-3 shadow-lg">
               <MaterialCommunityIcons
                 name="food-fork-drink"
-                size={48}
+                size={32}
                 color="white"
               />
             </View>
-            <Text className="font-playfair-bold text-3xl text-gray-800 text-center mb-2">
+            <Text
+              className="text-2xl text-gray-900 text-center mb-1"
+              style={{ fontFamily: "PlayfairDisplay-Bold" }}
+            >
               ADITYA FOODS
             </Text>
-            <Text className="font-poppins text-sm text-gray-600 text-center">
+            <Text
+              className="text-sm text-gray-600 text-center"
+              style={{ fontFamily: "Poppins-Regular" }}
+            >
               Delicious meals at your fingertips
             </Text>
           </View>
 
           {/* Form */}
-          <View className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+          <View className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
+            <View className="mb-4">
+              <Text
+                className="text-lg text-gray-900 text-center mb-1"
+                style={{ fontFamily: "Poppins-SemiBold" }}
+              >
+                {isLogin ? "Welcome Back" : "Create Account"}
+              </Text>
+              <Text
+                className="text-sm text-gray-500 text-center"
+                style={{ fontFamily: "Poppins-Regular" }}
+              >
+                {isLogin ? "Sign in to continue" : "Join us today"}
+              </Text>
+            </View>
+
             {!isLogin && (
               <>
                 <InputField
@@ -208,6 +251,7 @@ const AuthScreen = () => {
                   value={name}
                   setValue={setName}
                   icon="account"
+                  placeholder="John Doe"
                 />
                 <InputField
                   label="Email Address"
@@ -215,6 +259,7 @@ const AuthScreen = () => {
                   setValue={setEmail}
                   icon="email"
                   keyboardType="email-address"
+                  placeholder="john@example.com"
                 />
                 <InputField
                   label="Phone Number"
@@ -222,6 +267,7 @@ const AuthScreen = () => {
                   setValue={setPhoneNumber}
                   icon="phone"
                   keyboardType="phone-pad"
+                  placeholder="+91 98765 43210"
                 />
               </>
             )}
@@ -230,43 +276,57 @@ const AuthScreen = () => {
               value={userId}
               setValue={setUserId}
               icon="account-circle"
+              placeholder="your_username"
             />
             <InputField
               label="Password"
               value={password}
               setValue={setPassword}
-              icon="lock"
+              icon="lock-outline"
               isPassword={true}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
+              placeholder="Enter password"
             />
 
             <TouchableOpacity
-              className={`bg-orange-500 rounded-xl py-4 items-center mt-6 shadow-md ${
-                loading ? "opacity-60" : ""
+              className={`bg-orange-500 rounded-xl py-3 items-center mt-4 shadow-md ${
+                loading ? "opacity-70" : "shadow-orange-200"
               }`}
               onPress={isLogin ? handleLogin : handleSignup}
               disabled={loading}
+              activeOpacity={0.8}
             >
-              <Text className="text-white text-lg font-poppins-bold">
-                {loading ? "Loading..." : isLogin ? "LOGIN" : "SIGN UP"}
+              <Text
+                className="text-white text-base"
+                style={{ fontFamily: "Poppins-SemiBold" }}
+              >
+                {loading
+                  ? "Please wait..."
+                  : isLogin
+                  ? "Sign In"
+                  : "Create Account"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="mt-5 items-center"
+              className="mt-4 items-center py-2"
               onPress={() => setIsLogin(!isLogin)}
+              activeOpacity={0.7}
             >
-              <Text className="text-orange-500 text-sm font-poppins">
+              <Text
+                className="text-orange-600 text-sm"
+                style={{ fontFamily: "Poppins-Medium" }}
+              >
                 {isLogin
-                  ? "Don't have an account? Sign up here"
-                  : "Already have an account? Log in here"}
+                  ? "New here? Create an account"
+                  : "Already registered? Sign in"}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Decorative Element */}
-          <View className="w-16 h-1 bg-orange-500 rounded self-center mt-12" />
+          <View className="w-12 h-0.5 bg-orange-500 rounded self-center mt-6" />
         </View>
       </ScrollView>
       <Toast />
