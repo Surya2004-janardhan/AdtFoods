@@ -55,6 +55,7 @@ const login = async (req, res) => {
 
 // Handle user registration
 const signup = async (req, res) => {
+  console.log("here in the body of signup");
   const { user_id, name, password, email, phone_number } = req.body;
 
   // Validate input fields with user-friendly messages

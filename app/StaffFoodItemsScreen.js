@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -14,81 +14,60 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import FoodContext from "../context/FoodContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const StaffFoodItemsScreen = () => {
-  const [foodItems, setFoodItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { foodItems, loading, fetchFoodItems, updateFoodItemAvailability } =
+    useContext(FoodContext);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchFoodItems = async () => {
-      try {
-        setLoading(true);
-
-        // Mock food items data - replace with actual API call
-        const mockItems = [
-          {
-            id: "1",
-            food_name: "Chicken Biryani",
-            food_description:
-              "Aromatic basmati rice with tender chicken pieces",
-            price: 250,
-            food_image: "https://via.placeholder.com/150",
-            available: true,
-            category: "Main Course",
-          },
-          {
-            id: "2",
-            food_name: "Paneer Tikka",
-            food_description: "Grilled cottage cheese with spices",
-            price: 180,
-            food_image: "https://via.placeholder.com/150",
-            available: true,
-            category: "Starters",
-          },
-          {
-            id: "3",
-            food_name: "Dal Tadka",
-            food_description: "Yellow lentils with tempering",
-            price: 120,
-            food_image: "https://via.placeholder.com/150",
-            available: false,
-            category: "Main Course",
-          },
-        ];
-
-        setTimeout(() => {
-          setFoodItems(mockItems);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching food items:", error);
-        setLoading(false);
+    const loadFoodItems = async () => {
+      const result = await fetchFoodItems();
+      if (!result.success) {
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Failed to load food items",
+          text2: result.error,
         });
       }
     };
 
-    fetchFoodItems();
+    loadFoodItems();
   }, []);
 
-  const toggleAvailability = (itemId) => {
-    setFoodItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, available: !item.available } : item
-      )
-    );
+  const toggleAvailability = async (itemId) => {
+    try {
+      const item = foodItems.find((f) => f.id === itemId);
+      const newAvailability = !item.available;
 
-    Toast.show({
-      type: "success",
-      text1: "Updated",
-      text2: "Item availability updated",
-    });
+      const result = await updateFoodItemAvailability(itemId, newAvailability);
+
+      if (result.success) {
+        Toast.show({
+          type: "success",
+          text1: "Updated",
+          text2: `Item ${
+            newAvailability ? "enabled" : "disabled"
+          } successfully`,
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: result.error,
+        });
+      }
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update item availability",
+      });
+    }
   };
 
   const renderFoodItem = ({ item }) => (

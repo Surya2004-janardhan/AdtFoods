@@ -106,23 +106,15 @@ const AuthScreen = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("/auth/login", {
-        user_id: userId,
-        password,
-      });
+      const result = await authContext.login(userId, password);
 
-      if (response.data.token) {
-        await AsyncStorage.setItem("userToken", response.data.token);
-        await AsyncStorage.setItem("userId", userId);
-
-        if (response.data.user_role) {
-          await AsyncStorage.setItem("userRole", response.data.user_role);
-        }
-
-        // Navigate based on user role
-        if (response.data.user_role === "staff") {
+      if (result.success) {
+        // Navigate based on staff status
+        if (result.isStaff) {
+          await AsyncStorage.setItem("userRole", "staff");
           router.replace("/StaffFoodItemsScreen");
         } else {
+          await AsyncStorage.setItem("userRole", "user");
           router.replace("/HomeScreen");
         }
 
@@ -131,12 +123,18 @@ const AuthScreen = () => {
           text1: "Login Successful",
           text2: "Welcome back!",
         });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Login Failed",
+          text2: result.error,
+        });
       }
     } catch (error) {
       Toast.show({
         type: "error",
         text1: "Login Failed",
-        text2: error.response?.data?.message || "An error occurred",
+        text2: "An unexpected error occurred",
       });
     } finally {
       setLoading(false);
@@ -155,17 +153,19 @@ const AuthScreen = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("/auth/register", {
-        user_name: name,
+      const userData = {
+        user_id: userId,
+        name: name,
         email,
         phone_number: phoneNumber,
-        user_id: userId,
         password,
-      });
+      };
 
-      if (response.data.token) {
-        await AsyncStorage.setItem("userToken", response.data.token);
+      const result = await authContext.signup(userData);
+
+      if (result.success) {
         await AsyncStorage.setItem("userId", userId);
+        await AsyncStorage.setItem("userRole", "user");
 
         router.replace("/HomeScreen");
 
@@ -174,12 +174,18 @@ const AuthScreen = () => {
           text1: "Registration Successful",
           text2: "Welcome to Aditya Foods!",
         });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed",
+          text2: result.error,
+        });
       }
     } catch (error) {
       Toast.show({
         type: "error",
         text1: "Registration Failed",
-        text2: error.response?.data?.message || "An error occurred",
+        text2: "An unexpected error occurred",
       });
     } finally {
       setLoading(false);
@@ -251,7 +257,7 @@ const AuthScreen = () => {
                   value={name}
                   setValue={setName}
                   icon="account"
-                  placeholder="John Doe"
+                  placeholder="Enter Name"
                 />
                 <InputField
                   label="Email Address"
@@ -259,7 +265,7 @@ const AuthScreen = () => {
                   setValue={setEmail}
                   icon="email"
                   keyboardType="email-address"
-                  placeholder="john@example.com"
+                  placeholder="Enter E-mail"
                 />
                 <InputField
                   label="Phone Number"
@@ -267,7 +273,7 @@ const AuthScreen = () => {
                   setValue={setPhoneNumber}
                   icon="phone"
                   keyboardType="phone-pad"
-                  placeholder="+91 98765 43210"
+                  placeholder="Enter Phone no"
                 />
               </>
             )}
@@ -276,7 +282,7 @@ const AuthScreen = () => {
               value={userId}
               setValue={setUserId}
               icon="account-circle"
-              placeholder="your_username"
+              placeholder="Enter username"
             />
             <InputField
               label="Password"

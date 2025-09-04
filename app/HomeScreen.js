@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,15 @@ import {
   SafeAreaView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import axios from "../axiosConfig";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import FoodContext from "../context/FoodContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const HomeScreen = () => {
-  const [restaurants, setRestaurants] = useState([]);
+  const { restaurants, loading, fetchRestaurants } = useContext(FoodContext);
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userId, setUserId] = useState("");
@@ -37,14 +36,20 @@ const HomeScreen = () => {
         setJwtToken(token);
         setUserId(id);
 
-        // Fetch restaurants data
-        const response = await axios.get("/restaurants");
-        setRestaurants(response.data);
+        // Fetch restaurants using context
+        const result = await fetchRestaurants();
 
-        // Set featured restaurants (first 3)
-        setFeaturedRestaurants(response.data.slice(0, 3));
-
-        setLoading(false);
+        if (result.success) {
+          // Set featured restaurants (first 3)
+          setFeaturedRestaurants(result.data.slice(0, 3));
+        } else {
+          setError(result.error);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: result.error,
+          });
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         setError("Failed to fetch data");

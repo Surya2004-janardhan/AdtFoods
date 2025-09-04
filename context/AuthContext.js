@@ -41,12 +41,12 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (userId, password) => {
     try {
-      const response = await axios.post("/login", {
+      const response = await axios.post("/auth/login", {
         user_id: userId.toString(),
         password: password.toString(),
       });
 
-      if (response.data.success) {
+      if (response.data.success && response.data.token) {
         const userData = response.data.user;
         const authToken = response.data.token;
 
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
   // Sign up function
   const signup = async (userData) => {
     try {
-      const response = await axios.post("/signup", userData);
+      const response = await axios.post("/auth/signup", userData);
       console.log(response);
       if (response.data.success) {
         const authToken = response.data.token;

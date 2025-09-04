@@ -13,16 +13,17 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import axios from "../axiosConfig";
 import CartContext from "../context/CartContext";
+import FoodContext from "../context/FoodContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const UserFoodItemsScreen = () => {
   const [foodItems, setFoodItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const { getRestaurantById, getFoodItemsByRestaurant, loading } =
+    useContext(FoodContext);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { cartItems, addToCart } = useContext(CartContext);
@@ -32,21 +33,28 @@ const UserFoodItemsScreen = () => {
 
   const fetchFoodItems = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch restaurant info
-      const restaurantResponse = await axios.get(`/restaurants/${restaurantId}`);
-      setRestaurantInfo(restaurantResponse.data);
+      // Get restaurant info using context
+      const restaurantResult = await getRestaurantById(restaurantId);
+      if (restaurantResult.success) {
+        setRestaurantInfo(restaurantResult.data);
+      }
 
-      // Fetch food items for this restaurant
-      const response = await axios.get(`/food-items?restaurantId=${restaurantId}`);
-      const availableItems = response.data.filter((item) => item.available);
-      const updatedItems = availableItems.map((item) => ({
-        ...item,
-        price: parseFloat(item.price),
-        quantity: 0,
-      }));
-      setFoodItems(updatedItems);
+      // Get food items for this restaurant using context
+      const foodResult = await getFoodItemsByRestaurant(restaurantId);
+      if (foodResult.success) {
+        const updatedItems = foodResult.data.map((item) => ({
+          ...item,
+          price: parseFloat(item.price),
+          quantity: 0,
+        }));
+        setFoodItems(updatedItems);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: foodResult.error,
+        });
+      }
     } catch (error) {
       console.error("Error fetching food items:", error.message);
       Toast.show({
@@ -54,8 +62,6 @@ const UserFoodItemsScreen = () => {
         text1: "Error",
         text2: "Failed to fetch menu items. Please try again.",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -81,14 +87,14 @@ const UserFoodItemsScreen = () => {
   };
 
   const handleAddToCart = (item) => {
-    addToCart({ 
-      id: item._id, 
-      name: item.food_name, 
+    addToCart({
+      id: item._id,
+      name: item.food_name,
       price: item.price,
       image: item.food_image,
-      restaurantId: restaurantId
+      restaurantId: restaurantId,
     });
-    
+
     Toast.show({
       type: "success",
       text1: "Added to Cart",
@@ -97,12 +103,13 @@ const UserFoodItemsScreen = () => {
   };
 
   const renderFoodItem = ({ item }) => {
-    const cartQuantity = cartItems.find(ci => ci.id === item._id)?.quantity || 0;
-    
+    const cartQuantity =
+      cartItems.find((ci) => ci.id === item._id)?.quantity || 0;
+
     return (
       <View style={styles.foodCard}>
         <Image
-          source={{ uri: item.food_image || 'https://via.placeholder.com/150' }}
+          source={{ uri: item.food_image || "https://via.placeholder.com/150" }}
           style={styles.foodImage}
         />
         <View style={styles.foodInfo}>
@@ -126,7 +133,9 @@ const UserFoodItemsScreen = () => {
             <View style={styles.quantityContainer}>
               {cartQuantity > 0 && (
                 <View style={styles.quantityBadge}>
-                  <Text style={styles.quantityText}>{cartQuantity} in cart</Text>
+                  <Text style={styles.quantityText}>
+                    {cartQuantity} in cart
+                  </Text>
                 </View>
               )}
             </View>
@@ -149,7 +158,11 @@ const UserFoodItemsScreen = () => {
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.loadingContent}>
           <View style={styles.loadingIcon}>
-            <MaterialCommunityIcons name="silverware-fork-knife" size={48} color="#FF6B00" />
+            <MaterialCommunityIcons
+              name="silverware-fork-knife"
+              size={48}
+              color="#FF6B00"
+            />
           </View>
           <ActivityIndicator size="large" color="#FF6B00" />
           <Text style={styles.loadingText}>Loading menu...</Text>
@@ -161,7 +174,7 @@ const UserFoodItemsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -173,12 +186,14 @@ const UserFoodItemsScreen = () => {
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Menu</Text>
           {restaurantInfo && (
-            <Text style={styles.headerSubtitle}>{restaurantInfo.restaurant_name}</Text>
+            <Text style={styles.headerSubtitle}>
+              {restaurantInfo.restaurant_name}
+            </Text>
           )}
         </View>
         <TouchableOpacity
           style={styles.cartButton}
-          onPress={() => router.push('/UserCartScreen')}
+          onPress={() => router.push("/UserCartScreen")}
         >
           <MaterialCommunityIcons name="cart" size={24} color="#FF6B00" />
           {cartItems.length > 0 && (
@@ -195,18 +210,28 @@ const UserFoodItemsScreen = () => {
       {restaurantInfo && (
         <View style={styles.restaurantCard}>
           <Image
-            source={{ uri: restaurantInfo.restaurant_image || 'https://via.placeholder.com/400x200' }}
+            source={{
+              uri:
+                restaurantInfo.restaurant_image ||
+                "https://via.placeholder.com/400x200",
+            }}
             style={styles.restaurantImage}
           />
           <View style={styles.restaurantOverlay}>
-            <Text style={styles.restaurantName}>{restaurantInfo.restaurant_name}</Text>
+            <Text style={styles.restaurantName}>
+              {restaurantInfo.restaurant_name}
+            </Text>
             <View style={styles.restaurantMeta}>
               <View style={styles.restaurantRating}>
                 <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
                 <Text style={styles.restaurantRatingText}>4.5</Text>
               </View>
               <View style={styles.restaurantLocation}>
-                <MaterialCommunityIcons name="map-marker" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons
+                  name="map-marker"
+                  size={16}
+                  color="#FFFFFF"
+                />
                 <Text style={styles.restaurantLocationText}>
                   {restaurantInfo.restaurant_location}
                 </Text>
@@ -225,7 +250,7 @@ const UserFoodItemsScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#FF6B00']}
+            colors={["#FF6B00"]}
             tintColor="#FF6B00"
           />
         }
@@ -239,4 +264,4 @@ const UserFoodItemsScreen = () => {
     </SafeAreaView>
   );
 };
-export default UserFoodItemsScreen
+export default UserFoodItemsScreen;

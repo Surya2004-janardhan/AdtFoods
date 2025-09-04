@@ -13,12 +13,15 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CartContext } from "../context/CartContext";
+import OrdersContext from "../context/OrdersContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 export default function PaymentScreen() {
   const { cartItems, clearCart } = useContext(CartContext);
+  const { createOrder } = useContext(OrdersContext);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -37,7 +40,7 @@ export default function PaymentScreen() {
   const tax = Math.round(calculateTotal() * 0.08);
   const total = calculateTotal() + deliveryFee + tax;
 
-  const processPayment = () => {
+  const processPayment = async () => {
     if (selectedPaymentMethod === "card") {
       if (!cardNumber || !expiryDate || !cvv) {
         Toast.show({
@@ -66,11 +69,52 @@ export default function PaymentScreen() {
     }
 
     setProcessing(true);
-    setTimeout(() => {
-      clearCart();
-      router.push("/PaymentSuccessScreen");
+
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const userName = (await AsyncStorage.getItem("userName")) || "Customer";
+
+      // Create order data
+      const orderData = {
+        userId: userId,
+        name: userName,
+        items: cartItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total: total,
+        paymentMethod: selectedPaymentMethod,
+        note: "",
+      };
+
+      // Create order via context
+      const result = await createOrder(orderData);
+
+      if (result.success) {
+        clearCart();
+
+        Toast.show({
+          type: "success",
+          text1: "Order Placed",
+          text2: "Your order has been placed successfully!",
+        });
+
+        router.push("/PaymentSuccessScreen");
+      } else {
+        throw new Error(result.error || "Failed to create order");
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      Toast.show({
+        type: "error",
+        text1: "Order Failed",
+        text2: error.response?.data?.error || "Failed to place order",
+      });
+    } finally {
       setProcessing(false);
-    }, 2000);
+    }
   };
 
   const formatCardNumber = (text) => {

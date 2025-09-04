@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { CartProvider } from "../context/CartContext";
 import { OrdersProvider } from "../context/OrdersContext";
 import { AuthProvider } from "../context/AuthContext";
+import { FoodProvider } from "../context/FoodContext";
 import Toast from "react-native-toast-message";
 import { useFonts } from "expo-font";
 import { Text, View } from "react-native";
@@ -55,31 +56,33 @@ export default function Layout() {
 
   return (
     <AuthProvider>
-      <CartProvider>
-        <OrdersProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: "#FFFFFF", // Modern white background
-              },
-            }}
-          >
-            <Stack.Screen name="index" options={{ title: "Home" }} />
-            <Stack.Screen name="AuthScreen" />
-            <Stack.Screen name="HomeScreen" />
-            <Stack.Screen name="UserFoodItemsScreen" />
-            <Stack.Screen name="PaymentScreen" />
-            <Stack.Screen name="PaymentSuccessScreen" />
-            <Stack.Screen name="UserCartScreen" />
-            <Stack.Screen name="StaffFoodItemsScreen" />
-            <Stack.Screen name="StaffOrdersScreen" />
-            <Stack.Screen name="OrdersScreen" />
-            <Stack.Screen name="AccountScreen" />
-          </Stack>
-          <Toast />
-        </OrdersProvider>
-      </CartProvider>
+      <FoodProvider>
+        <CartProvider>
+          <OrdersProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: "#FFFFFF", // Modern white background
+                },
+              }}
+            >
+              <Stack.Screen name="index" options={{ title: "Home" }} />
+              <Stack.Screen name="AuthScreen" />
+              <Stack.Screen name="HomeScreen" />
+              <Stack.Screen name="UserFoodItemsScreen" />
+              <Stack.Screen name="PaymentScreen" />
+              <Stack.Screen name="PaymentSuccessScreen" />
+              <Stack.Screen name="UserCartScreen" />
+              <Stack.Screen name="StaffFoodItemsScreen" />
+              <Stack.Screen name="StaffOrdersScreen" />
+              <Stack.Screen name="OrdersScreen" />
+              <Stack.Screen name="AccountScreen" />
+            </Stack>
+            <Toast />
+          </OrdersProvider>
+        </CartProvider>
+      </FoodProvider>
     </AuthProvider>
   );
 }
