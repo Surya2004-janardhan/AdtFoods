@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const orderController = require("../controllers/orderController");
 const { auth } = require("../middleware/auth");
-const { validateRequest } = require("../middleware/validateRequest");
+const validateRequest =
+  require("../middleware/validateRequest").validateRequest;
 
 // Create order schema
 const createOrderSchema = {

@@ -10,20 +10,27 @@ const foodRoutes = require("./routes/foodRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 
 // Import middleware
-const { errorHandler } = require("./middleware/errorHandler");
-const { notFoundHandler } = require("./middleware/notFoundHandler");
+const errorHandler = require("./middleware/errorHandler");
+const notFoundHandler = require("./middleware/notFoundHandler");
 
 // Import configuration
-const { connectDB } = require("./config/database");
+const connectDB = require("./config/database");
+// const { MONGO_URI } = require("./config/constants");
 
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
-
-// Connect to MongoDB
 connectDB();
+// Connect to MongoDB
+// mongoose
+//   .connect(MONGO_URI || "mongodb://localhost:27017/adtfoods", {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+//   .then(() => console.log("MongoDB Connected"))
+//   .catch((err) => console.log("MongoDB Connection Error:", err));
 
 // Middleware
 app.use(express.json());
@@ -42,11 +49,14 @@ app.get("/", (req, res) => {
 });
 
 // 404 handler
-app.use(notFoundHandler);
+app.use(notFoundHandler.notFoundHandler);
 
 // Error handler
-app.use(errorHandler);
+app.use(errorHandler.errorHandler);
 
+app.listen(3500, () => {
+  console.log("server running successfully on 3500");
+});
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.log("UNHANDLED REJECTION! 💥 Shutting down...");

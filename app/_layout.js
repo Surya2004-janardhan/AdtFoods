@@ -3,7 +3,8 @@ import { CartProvider } from "../context/CartContext";
 import { OrdersProvider } from "../context/OrdersContext";
 import { AuthProvider } from "../context/AuthContext";
 import Toast from "react-native-toast-message";
-
+import "../global.css";
+// import { Text } from "react-native";
 export default function Layout() {
   return (
     <AuthProvider>
@@ -31,5 +32,6 @@ export default function Layout() {
         </OrdersProvider>
       </CartProvider>
     </AuthProvider>
+    // <Text className = "text-2xl bg-amber m-2 p-4 rounded border-2 ">hi this is the main router component</Text>
   );
 }

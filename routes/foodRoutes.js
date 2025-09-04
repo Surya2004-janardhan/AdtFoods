@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const foodController = require("../controllers/foodController");
 const { auth } = require("../middleware/auth");
-const { validateRequest } = require("../middleware/validateRequest");
+const validateRequest =
+  require("../middleware/validateRequest").validateRequest;
 
 // Update food item schema
 const updateFoodItemSchema = {

@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/constants");
 
 // JWT Authentication middleware
-const authenticateToken = (req, res, next) => {
+const auth = (req, res, next) => {
   // Skip authentication for login, signup and root routes
   if (req.path === "/login" || req.path === "/signup" || req.path === "/") {
     return next();
@@ -28,4 +28,4 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-module.exports = authenticateToken;
+module.exports = { auth };
