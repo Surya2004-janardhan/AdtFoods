@@ -1,371 +1,571 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  TextInput,
-  RefreshControl,
   StatusBar,
   ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
 } from "react-native";
-import axios from "../axiosConfig";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import BottomNavigation from "../components/BottomNavigation";
+import Toast from "react-native-toast-message";
 
 const StaffOrdersScreen = () => {
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all"); // all, pending, in_progress, completed
   const router = useRouter();
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("/orders");
-      const sortedData = response.data.sort((a, b) =>
-        a.status === "pending" ? -1 : 1
-      );
-      setOrders(sortedData);
-      setFilteredOrders(sortedData);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOrderStatus = async (id, status) => {
-    try {
-      const response = await axios.patch(`/orders/${id}`, { status });
-      if (response.status === 200) {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === id ? { ...order, status } : order
-          )
-        );
-        setFilteredOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === id ? { ...order, status } : order
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error updating order status:", error);
-    }
-  };
-
-  const formatAmount = (amount) => {
-    return isNaN(parseFloat(amount)) ? "0.00" : parseFloat(amount).toFixed(2);
-  };
-
-  const handleSearch = (text) => {
-    setSearchTerm(text);
-    const filtered = orders.filter(
-      (order) =>
-        order.user_email?.toLowerCase().includes(text.toLowerCase()) ||
-        order.user_name?.toLowerCase().includes(text.toLowerCase()) ||
-        order.user_phone?.toLowerCase().includes(text.toLowerCase())
-    );
-    setFilteredOrders(filtered);
-  };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchOrders().finally(() => setRefreshing(false));
-  }, []);
-
-  const goBack = () => {
-    router.back();
-  };
-
   useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+
+        // Mock orders data - replace with actual API call
+        const mockOrders = [
+          {
+            id: "1",
+            orderNumber: "#ORD001",
+            customerName: "John Doe",
+            customerPhone: "+91 9999999999",
+            items: ["Chicken Biryani x2", "Paneer Tikka x1"],
+            total: 680,
+            status: "pending",
+            orderTime: "12:30 PM",
+            estimatedTime: "45 mins",
+            address: "123 Main Street, City",
+          },
+          {
+            id: "2",
+            orderNumber: "#ORD002",
+            customerName: "Jane Smith",
+            customerPhone: "+91 8888888888",
+            items: ["Pizza Margherita x1", "Garlic Bread x2"],
+            total: 520,
+            status: "in_progress",
+            orderTime: "12:15 PM",
+            estimatedTime: "30 mins",
+            address: "456 Oak Avenue, City",
+          },
+          {
+            id: "3",
+            orderNumber: "#ORD003",
+            customerName: "Mike Johnson",
+            customerPhone: "+91 7777777777",
+            items: ["Burger Combo x1", "French Fries x1"],
+            total: 350,
+            status: "completed",
+            orderTime: "11:45 AM",
+            estimatedTime: "25 mins",
+            address: "789 Pine Road, City",
+          },
+        ];
+
+        setTimeout(() => {
+          setOrders(mockOrders);
+          setLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        setLoading(false);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Failed to load orders",
+        });
+      }
+    };
+
     fetchOrders();
   }, []);
 
-  const getOrderStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "accepted":
-        return "bg-blue-100 text-blue-800";
+  const getStatusColor = (status) => {
+    switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
+        return "#FF6B00";
+      case "in_progress":
+        return "#2196F3";
+      case "completed":
+        return "#4CAF50";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "#666666";
     }
   };
 
-  const getOrderStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return <MaterialIcons name="check-circle" size={18} color="#22C55E" />;
-      case "accepted":
-        return <MaterialIcons name="hourglass-top" size={18} color="#3B82F6" />;
+  const getStatusText = (status) => {
+    switch (status) {
       case "pending":
-        return <MaterialIcons name="schedule" size={18} color="#EAB308" />;
-      case "rejected":
-        return <MaterialIcons name="cancel" size={18} color="#EF4444" />;
+        return "New Order";
+      case "in_progress":
+        return "Preparing";
+      case "completed":
+        return "Ready";
       default:
-        return <MaterialIcons name="help" size={18} color="#9CA3AF" />;
+        return "Unknown";
     }
   };
+
+  const updateOrderStatus = (orderId, newStatus) => {
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
+
+    Toast.show({
+      type: "success",
+      text1: "Status Updated",
+      text2: `Order status changed to ${getStatusText(newStatus)}`,
+    });
+  };
+
+  const getFilteredOrders = () => {
+    if (filter === "all") return orders;
+    return orders.filter((order) => order.status === filter);
+  };
+
+  const FilterButton = ({ title, value, count }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterButton,
+        filter === value && styles.activeFilterButton,
+      ]}
+      onPress={() => setFilter(value)}
+    >
+      <Text
+        style={[
+          styles.filterButtonText,
+          filter === value && styles.activeFilterButtonText,
+        ]}
+      >
+        {title}
+      </Text>
+      {count > 0 && (
+        <View
+          style={[
+            styles.filterBadge,
+            filter === value && styles.activeFilterBadge,
+          ]}
+        >
+          <Text
+            style={[
+              styles.filterBadgeText,
+              filter === value && styles.activeFilterBadgeText,
+            ]}
+          >
+            {count}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const renderOrder = ({ item }) => (
+    <View style={styles.orderCard}>
+      <View style={styles.orderHeader}>
+        <View>
+          <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+          <Text style={styles.orderTime}>{item.orderTime}</Text>
+        </View>
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusColor(item.status) },
+          ]}
+        >
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.customerInfo}>
+        <MaterialCommunityIcons name="account" size={16} color="#666666" />
+        <Text style={styles.customerName}>{item.customerName}</Text>
+        <TouchableOpacity
+          style={styles.callButton}
+          onPress={() => {
+            Toast.show({
+              type: "info",
+              text1: "Call Customer",
+              text2: item.customerPhone,
+            });
+          }}
+        >
+          <MaterialCommunityIcons name="phone" size={16} color="#FF6B00" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.itemsList}>
+        {item.items.map((foodItem, index) => (
+          <Text key={index} style={styles.itemText}>
+            • {foodItem}
+          </Text>
+        ))}
+      </View>
+
+      <View style={styles.orderFooter}>
+        <View>
+          <Text style={styles.estimatedTime}>Est. {item.estimatedTime}</Text>
+          <Text style={styles.orderTotal}>₹{item.total}</Text>
+        </View>
+
+        {item.status !== "completed" && (
+          <View style={styles.actionButtons}>
+            {item.status === "pending" && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.acceptButton]}
+                onPress={() => updateOrderStatus(item.id, "in_progress")}
+              >
+                <MaterialCommunityIcons
+                  name="check"
+                  size={16}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.actionButtonText}>Accept</Text>
+              </TouchableOpacity>
+            )}
+            {item.status === "in_progress" && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.readyButton]}
+                onPress={() => updateOrderStatus(item.id, "completed")}
+              >
+                <MaterialCommunityIcons
+                  name="check-all"
+                  size={16}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.actionButtonText}>Ready</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-accent-cream">
-        <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
-        <ActivityIndicator size="large" color="#FF6B00" />
-        <Text className="mt-4 text-secondary font-['Poppins'] text-lg">
-          Loading orders...
-        </Text>
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.loadingContent}>
+          <View style={styles.loadingIcon}>
+            <MaterialCommunityIcons
+              name="clipboard-list"
+              size={48}
+              color="#FF6B00"
+            />
+          </View>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading orders...</Text>
+        </View>
       </View>
     );
   }
 
+  const filteredOrders = getFilteredOrders();
+
   return (
-    <View className="flex-1 bg-accent-cream">
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-primary">
-        <View className="flex-row justify-between items-center">
-          <TouchableOpacity onPress={goBack} className="p-2">
-            <Feather name="arrow-left" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="font-['PlayfairDisplay-Bold'] text-2xl text-white">
-            Order Management
-          </Text>
-          <TouchableOpacity onPress={onRefresh} className="p-2">
-            <Feather name="refresh-cw" size={20} color="white" />
-          </TouchableOpacity>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Order Management</Text>
+          <Text style={styles.headerSubtitle}>Manage incoming orders</Text>
         </View>
-        <Text className="font-['Poppins'] text-sm text-accent-off mt-1">
-          Staff Control Panel
-        </Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={() => {
+            Toast.show({
+              type: "success",
+              text1: "Refreshed",
+              text2: "Orders list updated",
+            });
+          }}
+        >
+          <MaterialCommunityIcons name="refresh" size={24} color="#FF6B00" />
+        </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View className="px-5 py-3">
-        <View className="flex-row items-center bg-white rounded-xl px-3 py-2 shadow-sm">
-          <Feather name="search" size={20} color="#FF6B00" />
-          <TextInput
-            className="flex-1 ml-2 font-['Poppins'] text-secondary"
-            placeholder="Search orders by name, email, phone..."
-            placeholderTextColor="#9CA3AF"
-            value={searchTerm}
-            onChangeText={handleSearch}
-          />
-          {searchTerm.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch("")}>
-              <Feather name="x-circle" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-          )}
-        </View>
+      {/* Filter Tabs */}
+      <View style={styles.filterContainer}>
+        <FilterButton title="All" value="all" count={orders.length} />
+        <FilterButton
+          title="Pending"
+          value="pending"
+          count={orders.filter((o) => o.status === "pending").length}
+        />
+        <FilterButton
+          title="Preparing"
+          value="in_progress"
+          count={orders.filter((o) => o.status === "in_progress").length}
+        />
+        <FilterButton
+          title="Ready"
+          value="completed"
+          count={orders.filter((o) => o.status === "completed").length}
+        />
       </View>
 
+      {/* Orders List */}
       <FlatList
         data={filteredOrders}
-        keyExtractor={(item, index) =>
-          item.id ? item.id.toString() : `order-${index}`
-        }
-        renderItem={({ item }) => (
-          <View className="mx-5 my-2 bg-white rounded-xl overflow-hidden shadow-md">
-            <View className="bg-primary-light px-4 py-3 flex-row justify-between items-center">
-              <Text className="font-['Poppins-Bold'] text-white">
-                Order #{item.order_id || "N/A"}
-              </Text>
-              <View className="flex-row items-center">
-                {getOrderStatusIcon(item.status)}
-                <Text className="font-['Poppins'] text-white ml-1">
-                  {item.status || "Unknown"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="p-4">
-              <View className="border-l-4 border-primary pl-3 mb-4">
-                <Text className="font-['PlayfairDisplay-Bold'] text-lg text-secondary">
-                  Customer Details
-                </Text>
-                <Text className="font-['Poppins'] text-xs text-secondary-light">
-                  {new Date(item.created_at).toLocaleString()}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center mb-3">
-                <Feather
-                  name="user"
-                  size={16}
-                  color="#FF6B00"
-                  className="mr-2"
-                />
-                <Text className="font-['Poppins'] text-secondary-light mr-2">
-                  Name:
-                </Text>
-                <Text className="font-['Poppins-Medium'] text-secondary">
-                  {item.user_name || "N/A"}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center mb-3">
-                <Feather
-                  name="mail"
-                  size={16}
-                  color="#FF6B00"
-                  className="mr-2"
-                />
-                <Text className="font-['Poppins'] text-secondary-light mr-2">
-                  Email:
-                </Text>
-                <Text className="font-['Poppins-Medium'] text-secondary">
-                  {item.user_email || "N/A"}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center mb-3">
-                <Feather
-                  name="phone"
-                  size={16}
-                  color="#FF6B00"
-                  className="mr-2"
-                />
-                <Text className="font-['Poppins'] text-secondary-light mr-2">
-                  Phone:
-                </Text>
-                <Text className="font-['Poppins-Medium'] text-secondary">
-                  {item.user_phone || "N/A"}
-                </Text>
-              </View>
-
-              <View className="mb-3">
-                <View className="flex-row items-center mb-1">
-                  <Feather
-                    name="shopping-bag"
-                    size={16}
-                    color="#FF6B00"
-                    className="mr-2"
-                  />
-                  <Text className="font-['Poppins'] text-secondary-light">
-                    Items:
-                  </Text>
-                </View>
-                <Text className="font-['Poppins'] text-secondary ml-6 mt-1">
-                  {item.items || "No items"}
-                </Text>
-              </View>
-
-              <View className="h-px bg-gray-100 my-3" />
-
-              <View className="flex-row justify-between items-center">
-                <Text className="font-['Poppins-Bold'] text-secondary">
-                  Total:
-                </Text>
-                <Text className="font-['PlayfairDisplay-Bold'] text-xl text-primary">
-                  ₹{formatAmount(item.total_amount)}
-                </Text>
-              </View>
-
-              {item.status === "pending" && (
-                <View className="flex-row mt-4 gap-3">
-                  <TouchableOpacity
-                    className="flex-1 bg-green-500 py-3 rounded-lg items-center"
-                    onPress={() => handleOrderStatus(item._id, "accepted")}
-                  >
-                    <Text className="font-['Poppins-Bold'] text-white">
-                      Accept
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="flex-1 bg-red-500 py-3 rounded-lg items-center"
-                    onPress={() => handleOrderStatus(item._id, "rejected")}
-                  >
-                    <Text className="font-['Poppins-Bold'] text-white">
-                      Reject
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {item.status === "accepted" && (
-                <TouchableOpacity
-                  className="mt-4 bg-primary py-3 rounded-lg items-center"
-                  onPress={() => handleOrderStatus(item._id, "completed")}
-                >
-                  <Text className="font-['Poppins-Bold'] text-white">
-                    Mark as Completed
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+        renderItem={renderOrder}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons
+              name="clipboard-text-outline"
+              size={64}
+              color="#CCCCCC"
+            />
+            <Text style={styles.emptyText}>No orders in this category</Text>
           </View>
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#FF6B00"]}
-            tintColor="#FF6B00"
-          />
-        }
-        ListEmptyComponent={
-          <View className="flex-1 items-center justify-center p-8 mt-10">
-            <MaterialIcons name="receipt-long" size={64} color="#CCCCCC" />
-            <Text className="font-['PlayfairDisplay-Bold'] text-xl text-secondary mt-4">
-              No Orders Yet
-            </Text>
-            <Text className="font-['Poppins'] text-secondary-light text-center mt-2">
-              There are currently no orders in the system
-            </Text>
-          </View>
-        }
-        contentContainerStyle={{
-          paddingVertical: 10,
-          paddingBottom: 80,
-          flexGrow: filteredOrders.length === 0 ? 1 : undefined,
-        }}
       />
 
       {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 bg-secondary rounded-t-2xl shadow-xl">
-        <View className="flex-row justify-around items-center py-4">
-          <TouchableOpacity
-            className="items-center"
-            onPress={() => router.push("/StaffFoodItemsScreen")}
-          >
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <Feather name="menu" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Menu</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity className="items-center opacity-50">
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <Feather name="clipboard" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Orders</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="items-center"
-            onPress={() => {
-              global.userProfile = null;
-              router.replace("/AuthScreen");
-            }}
-          >
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <MaterialIcons name="logout" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+      <BottomNavigation userRole="staff" />
+      <Toast />
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: "#FFF8F0",
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  loadingText: {
+    fontFamily: "Poppins",
+    fontSize: 16,
+    color: "#666666",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  headerTitle: {
+    fontFamily: "PlayfairDisplay-Bold",
+    fontSize: 20,
+    color: "#333333",
+  },
+  headerSubtitle: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    marginTop: 2,
+  },
+  refreshButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FFF8F0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "#F8F9FA",
+    gap: 4,
+  },
+  activeFilterButton: {
+    backgroundColor: "#FF6B00",
+  },
+  filterButtonText: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+  },
+  activeFilterButtonText: {
+    color: "#FFFFFF",
+  },
+  filterBadge: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  activeFilterBadge: {
+    backgroundColor: "#FFFFFF",
+  },
+  filterBadgeText: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 10,
+    color: "#FF6B00",
+  },
+  activeFilterBadgeText: {
+    color: "#FF6B00",
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 100, // Space for bottom navigation
+  },
+  orderCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  orderHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  orderNumber: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+    color: "#333333",
+  },
+  orderTime: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 12,
+    color: "#FFFFFF",
+  },
+  customerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+  customerName: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#333333",
+    flex: 1,
+  },
+  callButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FFF8F0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemsList: {
+    marginBottom: 16,
+  },
+  itemText: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    marginBottom: 4,
+  },
+  orderFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  estimatedTime: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+  },
+  orderTotal: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+    color: "#FF6B00",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  acceptButton: {
+    backgroundColor: "#2196F3",
+  },
+  readyButton: {
+    backgroundColor: "#4CAF50",
+  },
+  actionButtonText: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 12,
+    color: "#FFFFFF",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 16,
+  },
+});
 
 export default StaffOrdersScreen;

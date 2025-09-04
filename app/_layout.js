@@ -20,8 +20,13 @@ export default function Layout() {
 
   if (!fontsLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-accent">
-        <Text className="text-primary-dark font-bold text-lg">Loading...</Text>
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: "#FFFFFF" }}
+      >
+        <Text className="text-lg font-bold" style={{ color: "#333333" }}>
+          Loading...
+        </Text>
       </View>
     );
   }
@@ -34,7 +39,7 @@ export default function Layout() {
             screenOptions={{
               headerShown: false,
               contentStyle: {
-                backgroundColor: "#FFF8EE", // cream background
+                backgroundColor: "#FFFFFF", // Modern white background
               },
             }}
           >
@@ -49,7 +54,6 @@ export default function Layout() {
             <Stack.Screen name="StaffOrdersScreen" />
             <Stack.Screen name="OrdersScreen" />
             <Stack.Screen name="AccountScreen" />
-            <Stack.Screen name="SignUpScreen" />
           </Stack>
           <Toast />
         </OrdersProvider>

@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  StyleSheet,
 } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import axios from "../axiosConfig";
@@ -32,19 +33,17 @@ const InputField = ({
   setShowPassword,
 }) => {
   return (
-    <View className="mb-6">
-      <Text className="text-sm font-poppins-medium text-gray-700 mb-2">
-        {label}
-      </Text>
-      <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4">
+    <View style={styles.inputContainer}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <View style={styles.inputWrapper}>
         <MaterialCommunityIcons
           name={icon}
           size={20}
           color="#FF6B00"
-          className="mr-3"
+          style={styles.inputIcon}
         />
         <TextInput
-          className="flex-1 text-base font-poppins text-gray-800"
+          style={styles.textInput}
           value={value}
           onChangeText={setValue}
           keyboardType={keyboardType}
@@ -55,7 +54,7 @@ const InputField = ({
         {isPassword && (
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            className="ml-2"
+            style={styles.eyeIcon}
           >
             <Feather
               name={showPassword ? "eye" : "eye-off"}
@@ -176,31 +175,29 @@ const AuthScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 justify-center px-6 py-10">
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.content}>
           {/* Logo Section */}
-          <View className="items-center mb-12">
-            <View className="w-20 h-20 bg-orange-500 rounded-full items-center justify-center mb-4 shadow-lg">
+          <View style={styles.logoSection}>
+            <View style={styles.logoContainer}>
               <MaterialCommunityIcons
                 name="food-fork-drink"
                 size={48}
                 color="white"
               />
             </View>
-            <Text className="font-playfair-bold text-3xl text-gray-800 text-center mb-2">
-              ADITYA FOODS
-            </Text>
-            <Text className="font-poppins text-sm text-gray-600 text-center">
+            <Text style={styles.logoText}>ADITYA FOODS</Text>
+            <Text style={styles.taglineText}>
               Delicious meals at your fingertips
             </Text>
           </View>
 
           {/* Form */}
-          <View className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+          <View style={styles.formContainer}>
             {!isLogin && (
               <>
                 <InputField
@@ -242,22 +239,23 @@ const AuthScreen = () => {
             />
 
             <TouchableOpacity
-              className={`bg-orange-500 rounded-xl py-4 items-center mt-6 shadow-md ${
-                loading ? "opacity-60" : ""
-              }`}
+              style={[
+                styles.submitButton,
+                loading && styles.submitButtonDisabled,
+              ]}
               onPress={isLogin ? handleLogin : handleSignup}
               disabled={loading}
             >
-              <Text className="text-white text-lg font-poppins-bold">
+              <Text style={styles.submitButtonText}>
                 {loading ? "Loading..." : isLogin ? "LOGIN" : "SIGN UP"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="mt-5 items-center"
+              style={styles.switchButton}
               onPress={() => setIsLogin(!isLogin)}
             >
-              <Text className="text-orange-500 text-sm font-poppins">
+              <Text style={styles.switchButtonText}>
                 {isLogin
                   ? "Don't have an account? Sign up here"
                   : "Already have an account? Log in here"}
@@ -266,12 +264,141 @@ const AuthScreen = () => {
           </View>
 
           {/* Decorative Element */}
-          <View className="w-16 h-1 bg-orange-500 rounded self-center mt-12" />
+          <View style={styles.decorativeBar} />
         </View>
       </ScrollView>
       <Toast />
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  logoSection: {
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: "#FF6B00",
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#FF6B00",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoText: {
+    fontFamily: "PlayfairDisplay-Bold",
+    fontSize: 28,
+    color: "#333333",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  taglineText: {
+    fontFamily: "Poppins",
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  formContainer: {
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 14,
+    color: "#333333",
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FAFAFA",
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333333",
+    fontFamily: "Poppins",
+  },
+  eyeIcon: {
+    padding: 4,
+  },
+  submitButton: {
+    backgroundColor: "#FF6B00",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 24,
+    shadowColor: "#FF6B00",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#FFB366",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+  },
+  switchButton: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  switchButtonText: {
+    color: "#FF6B00",
+    fontSize: 14,
+    fontFamily: "Poppins",
+  },
+  decorativeBar: {
+    width: 64,
+    height: 4,
+    backgroundColor: "#FF6B00",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 48,
+  },
+});
 
 export default AuthScreen;

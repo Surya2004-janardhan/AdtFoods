@@ -4,235 +4,413 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
   StatusBar,
-  Alert,
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Switch,
+  Image,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import axios from "../axiosConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import BottomNavigation from "../components/BottomNavigation";
+import Toast from "react-native-toast-message";
 
 const StaffFoodItemsScreen = () => {
-  const router = useRouter();
   const [foodItems, setFoodItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    const fetchFoodItems = async () => {
+      try {
+        setLoading(true);
+
+        // Mock food items data - replace with actual API call
+        const mockItems = [
+          {
+            id: "1",
+            food_name: "Chicken Biryani",
+            food_description:
+              "Aromatic basmati rice with tender chicken pieces",
+            price: 250,
+            food_image: "https://via.placeholder.com/150",
+            available: true,
+            category: "Main Course",
+          },
+          {
+            id: "2",
+            food_name: "Paneer Tikka",
+            food_description: "Grilled cottage cheese with spices",
+            price: 180,
+            food_image: "https://via.placeholder.com/150",
+            available: true,
+            category: "Starters",
+          },
+          {
+            id: "3",
+            food_name: "Dal Tadka",
+            food_description: "Yellow lentils with tempering",
+            price: 120,
+            food_image: "https://via.placeholder.com/150",
+            available: false,
+            category: "Main Course",
+          },
+        ];
+
+        setTimeout(() => {
+          setFoodItems(mockItems);
+          setLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error("Error fetching food items:", error);
+        setLoading(false);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Failed to load food items",
+        });
+      }
+    };
+
     fetchFoodItems();
   }, []);
 
-  const fetchFoodItems = () => {
-    setLoading(true);
-    axios
-      .get("/food-items")
-      .then((response) => {
-        setFoodItems(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching food items:", error.message);
-        Alert.alert("Error", "Failed to load food items. Please try again.");
-        setLoading(false);
-      });
-  };
-
-  const toggleAvailability = (id) => {
-    const item = foodItems.find((item) => item.id === id);
-    if (item) {
-      axios
-        .put(`/food-items/${id}`, { available: !item.available })
-        .then((response) => {
-          setFoodItems((prevItems) =>
-            prevItems.map((item) =>
-              item.id === id ? { ...item, available: !item.available } : item
-            )
-          );
-        })
-        .catch((error) => {
-          console.error(
-            "Error updating food item availability:",
-            error.message
-          );
-          Alert.alert("Error", "Failed to update item availability.");
-        });
-    }
-  };
-
-  const handleLogout = () => {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        onPress: () => {
-          global.userProfile = null;
-          router.replace("/AuthScreen");
-        },
-        style: "destructive",
-      },
-    ]);
-  };
-
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-accent-cream">
-        <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
-        <ActivityIndicator size="large" color="#FF6B00" />
-        <Text className="mt-4 text-secondary font-['Poppins'] text-lg">
-          Loading menu items...
-        </Text>
-      </View>
+  const toggleAvailability = (itemId) => {
+    setFoodItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, available: !item.available } : item
+      )
     );
-  }
 
-  return (
-    <View className="flex-1 bg-accent-cream">
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
+    Toast.show({
+      type: "success",
+      text1: "Updated",
+      text2: "Item availability updated",
+    });
+  };
 
-      {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-primary">
-        <View className="flex-row justify-between items-center">
-          <Text className="font-['PlayfairDisplay-Bold'] text-2xl text-white">
-            Menu Management
-          </Text>
-          <TouchableOpacity onPress={fetchFoodItems} className="p-2">
-            <Feather name="refresh-cw" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-        <Text className="font-['Poppins'] text-sm text-accent-off mt-1">
-          Staff Control Panel
-        </Text>
-      </View>
-
-      <FlatList
-        data={foodItems}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View className="mx-5 my-3 bg-white rounded-xl overflow-hidden shadow-md">
-            <View className="p-4 flex-row">
-              <Image
-                source={{ uri: item.image_url || item.image }}
-                className="w-24 h-24 rounded-lg"
-                resizeMode="cover"
-                defaultSource={require("../assets/1.png")}
-              />
-
-              <View className="flex-1 ml-4">
-                <View className="flex-row justify-between">
-                  <Text className="font-['PlayfairDisplay-Bold'] text-lg text-secondary flex-1 mr-2">
-                    {item.name}
-                  </Text>
-                  <View className="bg-primary-light/20 rounded-full px-2 py-1">
-                    <Text className="font-['Poppins-Bold'] text-sm text-primary">
-                      ₹{parseFloat(item.price).toFixed(2)}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text
-                  className="font-['Poppins'] text-secondary-light text-xs mt-1"
-                  numberOfLines={2}
-                >
-                  {item.description}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() => toggleAvailability(item.id)}
-                  className={`mt-3 py-2 px-3 rounded-lg ${
-                    item.available ? "bg-green-100" : "bg-red-100"
-                  }`}
-                >
-                  <View className="flex-row items-center">
-                    <MaterialIcons
-                      name={item.available ? "check-circle" : "cancel"}
-                      size={16}
-                      color={item.available ? "#22C55E" : "#EF4444"}
-                    />
-                    <Text
-                      className={`font-['Poppins-Medium'] text-sm ml-1 ${
-                        item.available ? "text-green-700" : "text-red-700"
-                      }`}
-                    >
-                      {item.available ? "Available" : "Not Available"}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View className="flex-row border-t border-gray-100">
-              <TouchableOpacity className="flex-1 py-2 border-r border-gray-100 items-center">
-                <Text className="font-['Poppins'] text-primary text-sm">
-                  Edit
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 py-2 items-center">
-                <Text className="font-['Poppins'] text-red-500 text-sm">
-                  Delete
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        ListHeaderComponent={
-          <View className="mx-5 my-3">
-            <TouchableOpacity className="bg-primary py-3 rounded-xl flex-row justify-center items-center">
-              <Feather
-                name="plus-circle"
-                size={18}
-                color="white"
-                className="mr-2"
-              />
-              <Text className="font-['Poppins-Bold'] text-white text-base">
-                Add New Item
-              </Text>
-            </TouchableOpacity>
-          </View>
-        }
-        contentContainerStyle={{ paddingBottom: 90, paddingTop: 10 }}
-        ListEmptyComponent={
-          <View className="items-center justify-center p-8 mt-10">
-            <MaterialIcons name="restaurant-menu" size={64} color="#CCCCCC" />
-            <Text className="font-['PlayfairDisplay-Bold'] text-xl text-secondary mt-4 text-center">
-              No Menu Items
-            </Text>
-            <Text className="font-['Poppins'] text-secondary-light text-center mt-2">
-              Add new items to your menu
-            </Text>
-          </View>
-        }
+  const renderFoodItem = ({ item }) => (
+    <View style={styles.foodCard}>
+      <Image
+        source={{ uri: item.food_image || "https://via.placeholder.com/100" }}
+        style={styles.foodImage}
       />
+      <View style={styles.foodInfo}>
+        <View style={styles.foodHeader}>
+          <Text style={styles.foodName} numberOfLines={2}>
+            {item.food_name}
+          </Text>
+          <View style={styles.availabilityContainer}>
+            <Text style={styles.availabilityLabel}>Available</Text>
+            <Switch
+              value={item.available}
+              onValueChange={() => toggleAvailability(item.id)}
+              trackColor={{ false: "#CCCCCC", true: "#FF6B00" }}
+              thumbColor={item.available ? "#FFFFFF" : "#FFFFFF"}
+            />
+          </View>
+        </View>
 
-      {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 bg-secondary rounded-t-2xl shadow-xl">
-        <View className="flex-row justify-around items-center py-4">
-          <TouchableOpacity className="items-center opacity-50">
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <Feather name="menu" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Menu</Text>
-          </TouchableOpacity>
+        <Text style={styles.foodCategory}>{item.category}</Text>
+        <Text style={styles.foodDescription} numberOfLines={2}>
+          {item.food_description}
+        </Text>
 
+        <View style={styles.foodFooter}>
+          <Text style={styles.price}>₹{item.price}</Text>
           <TouchableOpacity
-            className="items-center"
-            onPress={() => router.push("/StaffOrdersScreen")}
+            style={styles.editButton}
+            onPress={() => {
+              Toast.show({
+                type: "info",
+                text1: "Edit Item",
+                text2: "Edit functionality coming soon",
+              });
+            }}
           >
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <Feather name="clipboard" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Orders</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity className="items-center" onPress={handleLogout}>
-            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
-              <MaterialIcons name="logout" size={24} color="#FF6B00" />
-            </View>
-            <Text className="text-accent text-xs font-['Poppins']">Logout</Text>
+            <MaterialCommunityIcons name="pencil" size={16} color="#FF6B00" />
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.loadingContent}>
+          <View style={styles.loadingIcon}>
+            <MaterialCommunityIcons name="food" size={48} color="#FF6B00" />
+          </View>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading menu items...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Menu Management</Text>
+          <Text style={styles.headerSubtitle}>
+            Manage food items and availability
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            Toast.show({
+              type: "info",
+              text1: "Add Item",
+              text2: "Add new item functionality coming soon",
+            });
+          }}
+        >
+          <MaterialCommunityIcons name="plus" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Stats Cards */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons name="food" size={24} color="#FF6B00" />
+          <Text style={styles.statValue}>{foodItems.length}</Text>
+          <Text style={styles.statLabel}>Total Items</Text>
+        </View>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons
+            name="check-circle"
+            size={24}
+            color="#4CAF50"
+          />
+          <Text style={styles.statValue}>
+            {foodItems.filter((item) => item.available).length}
+          </Text>
+          <Text style={styles.statLabel}>Available</Text>
+        </View>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons
+            name="close-circle"
+            size={24}
+            color="#FF4444"
+          />
+          <Text style={styles.statValue}>
+            {foodItems.filter((item) => !item.available).length}
+          </Text>
+          <Text style={styles.statLabel}>Unavailable</Text>
+        </View>
+      </View>
+
+      {/* Food Items List */}
+      <FlatList
+        data={foodItems}
+        renderItem={renderFoodItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Bottom Navigation */}
+      <BottomNavigation userRole="staff" />
+      <Toast />
+    </SafeAreaView>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: "#FFF8F0",
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  loadingText: {
+    fontFamily: "Poppins",
+    fontSize: 16,
+    color: "#666666",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  headerTitle: {
+    fontFamily: "PlayfairDisplay-Bold",
+    fontSize: 20,
+    color: "#333333",
+  },
+  headerSubtitle: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    marginTop: 2,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FF6B00",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#FF6B00",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  statValue: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 20,
+    color: "#333333",
+    marginTop: 8,
+  },
+  statLabel: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    marginTop: 4,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 100, // Space for bottom navigation
+  },
+  foodCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  foodImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: "#F0F0F0",
+    marginRight: 16,
+  },
+  foodInfo: {
+    flex: 1,
+  },
+  foodHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  foodName: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+    color: "#333333",
+    flex: 1,
+    marginRight: 12,
+  },
+  availabilityContainer: {
+    alignItems: "center",
+    gap: 4,
+  },
+  availabilityLabel: {
+    fontFamily: "Poppins",
+    fontSize: 10,
+    color: "#666666",
+  },
+  foodCategory: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#FF6B00",
+    marginBottom: 4,
+  },
+  foodDescription: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#666666",
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  foodFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  price: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+    color: "#333333",
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF8F0",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FF6B00",
+    gap: 4,
+  },
+  editButtonText: {
+    fontFamily: "Poppins",
+    fontSize: 12,
+    color: "#FF6B00",
+  },
+});
 
 export default StaffFoodItemsScreen;

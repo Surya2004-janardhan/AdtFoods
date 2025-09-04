@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       const response = await axios.post("/signup", userData);
-
+      console.log(response);
       if (response.data.success) {
         const authToken = response.data.token;
 
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, error: "Registration failed" };
     } catch (error) {
-      console.error("Signup error:", error);
+      // console.error("Signup error:", error.response.data);
       return {
         success: false,
         error:

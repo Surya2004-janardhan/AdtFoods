@@ -34,13 +34,17 @@ const UserFoodItemsScreen = () => {
   const fetchFoodItems = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch restaurant info
-      const restaurantResponse = await axios.get(`/restaurants/${restaurantId}`);
+      const restaurantResponse = await axios.get(
+        `/restaurants/${restaurantId}`
+      );
       setRestaurantInfo(restaurantResponse.data);
 
       // Fetch food items for this restaurant
-      const response = await axios.get(`/food-items?restaurantId=${restaurantId}`);
+      const response = await axios.get(
+        `/food-items?restaurantId=${restaurantId}`
+      );
       const availableItems = response.data.filter((item) => item.available);
       const updatedItems = availableItems.map((item) => ({
         ...item,
@@ -82,14 +86,14 @@ const UserFoodItemsScreen = () => {
   };
 
   const handleAddToCart = (item) => {
-    addToCart({ 
-      id: item._id, 
-      name: item.food_name, 
+    addToCart({
+      id: item._id,
+      name: item.food_name,
       price: item.price,
       image: item.food_image,
-      restaurantId: restaurantId
+      restaurantId: restaurantId,
     });
-    
+
     Toast.show({
       type: "success",
       text1: "Added to Cart",
@@ -98,12 +102,13 @@ const UserFoodItemsScreen = () => {
   };
 
   const renderFoodItem = ({ item }) => {
-    const cartQuantity = cartItems.find(ci => ci.id === item._id)?.quantity || 0;
-    
+    const cartQuantity =
+      cartItems.find((ci) => ci.id === item._id)?.quantity || 0;
+
     return (
       <View style={styles.foodCard}>
         <Image
-          source={{ uri: item.food_image || 'https://via.placeholder.com/150' }}
+          source={{ uri: item.food_image || "https://via.placeholder.com/150" }}
           style={styles.foodImage}
         />
         <View style={styles.foodInfo}>
@@ -127,7 +132,9 @@ const UserFoodItemsScreen = () => {
             <View style={styles.quantityContainer}>
               {cartQuantity > 0 && (
                 <View style={styles.quantityBadge}>
-                  <Text style={styles.quantityText}>{cartQuantity} in cart</Text>
+                  <Text style={styles.quantityText}>
+                    {cartQuantity} in cart
+                  </Text>
                 </View>
               )}
             </View>
@@ -150,7 +157,11 @@ const UserFoodItemsScreen = () => {
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.loadingContent}>
           <View style={styles.loadingIcon}>
-            <MaterialCommunityIcons name="silverware-fork-knife" size={48} color="#FF6B00" />
+            <MaterialCommunityIcons
+              name="silverware-fork-knife"
+              size={48}
+              color="#FF6B00"
+            />
           </View>
           <ActivityIndicator size="large" color="#FF6B00" />
           <Text style={styles.loadingText}>Loading menu...</Text>
@@ -162,7 +173,7 @@ const UserFoodItemsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -174,12 +185,14 @@ const UserFoodItemsScreen = () => {
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Menu</Text>
           {restaurantInfo && (
-            <Text style={styles.headerSubtitle}>{restaurantInfo.restaurant_name}</Text>
+            <Text style={styles.headerSubtitle}>
+              {restaurantInfo.restaurant_name}
+            </Text>
           )}
         </View>
         <TouchableOpacity
           style={styles.cartButton}
-          onPress={() => router.push('/UserCartScreen')}
+          onPress={() => router.push("/UserCartScreen")}
         >
           <MaterialCommunityIcons name="cart" size={24} color="#FF6B00" />
           {cartItems.length > 0 && (
@@ -196,18 +209,28 @@ const UserFoodItemsScreen = () => {
       {restaurantInfo && (
         <View style={styles.restaurantCard}>
           <Image
-            source={{ uri: restaurantInfo.restaurant_image || 'https://via.placeholder.com/400x200' }}
+            source={{
+              uri:
+                restaurantInfo.restaurant_image ||
+                "https://via.placeholder.com/400x200",
+            }}
             style={styles.restaurantImage}
           />
           <View style={styles.restaurantOverlay}>
-            <Text style={styles.restaurantName}>{restaurantInfo.restaurant_name}</Text>
+            <Text style={styles.restaurantName}>
+              {restaurantInfo.restaurant_name}
+            </Text>
             <View style={styles.restaurantMeta}>
               <View style={styles.restaurantRating}>
                 <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
                 <Text style={styles.restaurantRatingText}>4.5</Text>
               </View>
               <View style={styles.restaurantLocation}>
-                <MaterialCommunityIcons name="map-marker" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons
+                  name="map-marker"
+                  size={16}
+                  color="#FFFFFF"
+                />
                 <Text style={styles.restaurantLocationText}>
                   {restaurantInfo.restaurant_location}
                 </Text>
@@ -226,7 +249,7 @@ const UserFoodItemsScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#FF6B00']}
+            colors={["#FF6B00"]}
             tintColor="#FF6B00"
           />
         }
@@ -244,146 +267,146 @@ const UserFoodItemsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 16,
   },
   loadingIcon: {
     width: 80,
     height: 80,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: "#FFF8F0",
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   loadingText: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 16,
-    color: '#666666',
+    color: "#666666",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F8F9FA",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   headerInfo: {
     flex: 1,
   },
   headerTitle: {
-    fontFamily: 'PlayfairDisplay-Bold',
+    fontFamily: "PlayfairDisplay-Bold",
     fontSize: 20,
-    color: '#333333',
+    color: "#333333",
   },
   headerSubtitle: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     marginTop: 2,
   },
   cartButton: {
-    position: 'relative',
+    position: "relative",
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFF8F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   cartBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: '#FF6B00',
+    backgroundColor: "#FF6B00",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cartBadgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
   },
   restaurantCard: {
     height: 120,
     marginHorizontal: 20,
     marginVertical: 16,
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   restaurantImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   restaurantOverlay: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   restaurantName: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     fontSize: 16,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   restaurantMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   restaurantRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   restaurantRatingText: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 12,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   restaurantLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     flex: 1,
   },
   restaurantLocationText: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 12,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     flex: 1,
   },
   listContainer: {
@@ -392,112 +415,112 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   foodCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: "#F0F0F0",
   },
   foodImage: {
     width: 100,
     height: 100,
     borderRadius: 8,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
   },
   foodInfo: {
     flex: 1,
     marginLeft: 12,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   foodName: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     fontSize: 16,
-    color: '#333333',
+    color: "#333333",
     marginBottom: 4,
   },
   foodDescription: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 12,
-    color: '#666666',
+    color: "#666666",
     marginBottom: 8,
   },
   foodMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   priceLabel: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 12,
-    color: '#666666',
+    color: "#666666",
   },
   price: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     fontSize: 16,
-    color: '#FF6B00',
+    color: "#FF6B00",
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   ratingText: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 12,
-    color: '#666666',
+    color: "#666666",
   },
   actionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   quantityContainer: {
     flex: 1,
   },
   quantityBadge: {
-    backgroundColor: '#FFF8F0',
+    backgroundColor: "#FFF8F0",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FF6B00',
-    alignSelf: 'flex-start',
+    borderColor: "#FF6B00",
+    alignSelf: "flex-start",
   },
   quantityText: {
-    fontFamily: 'Poppins',
+    fontFamily: "Poppins",
     fontSize: 10,
-    color: '#FF6B00',
+    color: "#FF6B00",
   },
   addButton: {
-    flexDirection: 'row',
-    backgroundColor: '#FF6B00',
+    flexDirection: "row",
+    backgroundColor: "#FF6B00",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 4,
-    shadowColor: '#FF6B00',
+    shadowColor: "#FF6B00",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   addButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Poppins-Bold',
+    color: "#FFFFFF",
+    fontFamily: "Poppins-Bold",
     fontSize: 12,
   },
 });

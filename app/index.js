@@ -70,11 +70,33 @@ export default function IndexScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-accent-cream">
-        <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#FFFFFF",
+        }}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-        <View className="items-center mb-8">
-          <View className="w-24 h-24 bg-primary rounded-full items-center justify-center mb-5 shadow-xl">
+        <View style={{ alignItems: "center", marginBottom: 32 }}>
+          <View
+            style={{
+              width: 96,
+              height: 96,
+              backgroundColor: "#FF6B00",
+              borderRadius: 48,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20,
+              shadowColor: "#FF6B00",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 10,
+            }}
+          >
             <MaterialCommunityIcons
               name="food-fork-drink"
               size={56}
@@ -82,22 +104,50 @@ export default function IndexScreen() {
             />
           </View>
 
-          <Text className="font-['PlayfairDisplay-Bold'] text-3xl text-secondary text-center">
+          <Text
+            style={{
+              fontFamily: "PlayfairDisplay-Bold",
+              fontSize: 32,
+              color: "#333333",
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
             ADITYA FOODS
           </Text>
 
-          <Text className="font-['Poppins'] text-primary-dark text-base mt-2">
+          <Text
+            style={{
+              fontFamily: "Poppins",
+              color: "#666666",
+              fontSize: 16,
+              textAlign: "center",
+            }}
+          >
             Delicious meals at your fingertips
           </Text>
         </View>
 
-        <ActivityIndicator size="large" color="#FF6B00" />
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            borderWidth: 3,
+            borderColor: "#FF6B00",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#FFFFFF",
+          }}
+        >
+          <ActivityIndicator size="large" color="#FF6B00" />
+        </View>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-accent-cream">
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <CartProvider>
         <OrdersProvider>
           <Toast />

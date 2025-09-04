@@ -58,10 +58,12 @@ const signup = async (req, res) => {
   const { user_id, name, password, email, phone_number } = req.body;
 
   // Validate input fields with user-friendly messages
-  if (!user_id || !name || !password || !email || !phone_number)
+  if (!user_id || !name || !password || !email || !phone_number) {
+    console.log("here babji");
     return res
       .status(400)
       .json({ error: "Please fill in all required fields" });
+  }
 
   if (user_id.length !== 10)
     return res
