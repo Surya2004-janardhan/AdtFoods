@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
 import axios from "../axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import AuthContext from "../context/AuthContext";
 
 const AuthScreen = () => {
   const router = useRouter();
+  const { login, signup, isAuthenticated, isStaff } = useContext(AuthContext);
   const [isLogin, setIsLogin] = useState(true);
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
@@ -24,79 +26,94 @@ const AuthScreen = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const storeUserProfile = async (profile) => {
-    try {
-      await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
-    } catch (error) {
-      console.error("Error storing user profile:", error);
-    }
-  };
+  // Check if user is already authenticated on mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (isAuthenticated()) {
+        if (isStaff()) {
+          router.replace("/StaffFoodItemsScreen");
+        } else {
+          router.replace("/HomeScreen");
+        }
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
 
   const handleLogin = async () => {
+    if (!userId || !password) {
+      setError("Please enter both user ID and password");
+      return;
+    }
+
     setLoading(true);
     setError("");
+
     try {
-      // Navigate to the appropriate screen
-      userId === "1" && password === "1"
-        ? router.push("/StaffFoodItemsScreen")
-        : router.push("/HomeScreen");
-      const response = await axios.post("/login", {
-        user_id: userId.toString(),
-        password: password.toString(),
-      });
-      console.log("route login ");
+      const result = await login(userId, password);
 
-      const data = response.data;
-      if (data.success) {
-        console.log("backend correct");
-        const userProfile = {
-          id: data.user.user_id,
-          name: data.user.name,
-          email: data.user.email,
-          phone: data.user.phone_number,
-        };
-        await storeUserProfile(userProfile);
-        console.log("stored profile");
-        await AsyncStorage.setItem(
-          "fcmToken",
-          userId === "1" ? "staff" : "user"
-        );
-        console.log("userid", userId);
+      if (result.success) {
+        // Register device token
+        const fcmToken = userId === "1" ? "staff" : "user";
+        await AsyncStorage.setItem("fcmToken", fcmToken);
 
-        const storedToken = await AsyncStorage.getItem("fcmToken");
-        console.log(storedToken);
-        await axios.post("/save-token", { userId, token: storedToken });
+        // Save device token to server
+        await axios.post("/save-token", {
+          userId,
+          token: fcmToken,
+        });
 
-        console.log("fine till if ");
+        // Navigate based on user role
+        if (result.isStaff) {
+          router.replace("/StaffFoodItemsScreen");
+        } else {
+          router.replace("/HomeScreen");
+        }
       } else {
-        setError("Invalid ID or password");
+        setError(result.error || "Login failed. Please try again.");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Unexpected error occurred.");
+      setError(err.message || "An unexpected error occurred during login.");
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignup = async () => {
+    // Basic validation
+    if (!userId || !name || !password || !email || !phoneNumber) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     setLoading(true);
     setError("");
+
     try {
-      const response = await axios.post("/signup", {
+      const userData = {
         user_id: userId.toString(),
         name: name.toString(),
         password: password.toString(),
         email: email.toString(),
         phone_number: phoneNumber.toString(),
-      });
+      };
 
-      if (response.data.success) {
+      const result = await signup(userData);
+
+      if (result.success) {
+        // Show success message and switch to login view
+        setError("");
         setIsLogin(true);
       } else {
-        setError("Error signing up. Please try again.");
+        setError(result.error || "Registration failed. Please try again.");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Unexpected error occurred.");
+      setError(
+        err.message || "An unexpected error occurred during registration."
+      );
+      console.error("Signup error:", err);
     } finally {
       setLoading(false);
     }
