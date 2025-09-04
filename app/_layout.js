@@ -3,16 +3,39 @@ import { CartProvider } from "../context/CartContext";
 import { OrdersProvider } from "../context/OrdersContext";
 import { AuthProvider } from "../context/AuthContext";
 import Toast from "react-native-toast-message";
+import { useFonts } from "expo-font";
+import { Text, View } from "react-native";
 import "../global.css";
-// import { Text } from "react-native";
+
 export default function Layout() {
+  const [fontsLoaded] = useFonts({
+    Poppins: require("../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
+    "Poppins-Medium": require("../assets/fonts/Poppins-Medium.ttf"),
+    PlayfairDisplay: require("../assets/fonts/PlayfairDisplay-Regular.ttf"),
+    "PlayfairDisplay-Bold": require("../assets/fonts/PlayfairDisplay-Bold.ttf"),
+    Montserrat: require("../assets/fonts/Montserrat-Regular.ttf"),
+    "Montserrat-Bold": require("../assets/fonts/Montserrat-Bold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View className="flex-1 items-center justify-center bg-accent">
+        <Text className="text-primary-dark font-bold text-lg">Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <CartProvider>
         <OrdersProvider>
           <Stack
             screenOptions={{
-              headerShown: false, //  this hides headers globally
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: "#FFF8EE", // cream background
+              },
             }}
           >
             <Stack.Screen name="index" options={{ title: "Home" }} />
@@ -32,6 +55,5 @@ export default function Layout() {
         </OrdersProvider>
       </CartProvider>
     </AuthProvider>
-    // <Text className = "text-2xl bg-amber m-2 p-4 rounded border-2 ">hi this is the main router component</Text>
   );
 }

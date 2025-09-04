@@ -4,11 +4,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Image,
   ActivityIndicator,
   ScrollView,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import axios from "../axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -25,6 +28,7 @@ const AuthScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -119,159 +123,155 @@ const AuthScreen = () => {
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.innerContainer}>
-        <Image
-          source={{
-            uri: "https://tse3.mm.bing.net/th?id=OIP.7Qcj0BxVn5MWww7LaukFsQHaHa&pid=Api&P=0&h=180",
-          }}
-          style={styles.logo}
+  const InputField = ({
+    label,
+    value,
+    setValue,
+    icon,
+    keyboardType = "default",
+    secure = false,
+    isPassword = false,
+  }) => (
+    <View className="w-full mb-5">
+      <Text className="text-secondary font-['Poppins-Medium'] text-base mb-2">
+        {label}
+      </Text>
+      <View className="w-full flex-row items-center border-b-2 border-gray-200">
+        <Feather name={icon} size={18} color="#FF6B00" className="mr-2" />
+        <TextInput
+          value={value}
+          onChangeText={setValue}
+          className="flex-1 py-2 px-3 text-secondary text-base font-['Poppins']"
+          keyboardType={keyboardType}
+          secureTextEntry={isPassword && !showPassword}
         />
-        <Text style={styles.title}>{isLogin ? "Login" : "Sign Up"}</Text>
-        <Text style={styles.subtitle}>
-          {isLogin ? "Please log in to continue" : "Create a new account"}
-        </Text>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {!isLogin && (
-          <>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
+        {isPassword && (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            className="p-2"
+          >
+            <Feather
+              name={showPassword ? "eye-off" : "eye"}
+              size={18}
+              color="#888"
             />
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              style={styles.input}
-              keyboardType="email-address"
-            />
-            <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              style={styles.input}
-              keyboardType="phone-pad"
-            />
-          </>
+          </TouchableOpacity>
         )}
-        <Text style={styles.label}>ID</Text>
-        <TextInput
-          value={userId}
-          onChangeText={setUserId}
-          style={styles.input}
-        />
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-          secureTextEntry
-        />
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={isLogin ? handleLogin : handleSignup}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {isLogin ? "Login" : "Sign Up"}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-          <Text style={styles.linkText}>
-            {isLogin
-              ? "Don't have an account? Sign up here"
-              : "Already have an account? Log in here"}
-          </Text>
-        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+
+      <ScrollView className="flex-1 bg-accent-cream">
+        <View className="flex-1 items-center justify-center px-6 py-10">
+          {/* Logo and Header */}
+          <View className="w-full items-center mb-8">
+            <View className="w-24 h-24 bg-primary rounded-full items-center justify-center mb-6 shadow-lg">
+              <MaterialCommunityIcons name="food" size={56} color="white" />
+            </View>
+
+            <Text className="font-['PlayfairDisplay-Bold'] text-3xl text-secondary text-center">
+              ADITYA FOODS
+            </Text>
+
+            <View className="h-1 w-20 bg-primary my-3" />
+
+            <Text className="font-['Poppins'] text-secondary-light text-center text-base">
+              {isLogin
+                ? "Welcome back! Please log in to continue"
+                : "Create an account to get started"}
+            </Text>
+          </View>
+
+          {/* Error Message */}
+          {error ? (
+            <View className="w-full bg-red-100 border-l-4 border-red-500 p-3 rounded mb-5">
+              <Text className="text-red-500 font-['Poppins']">{error}</Text>
+            </View>
+          ) : null}
+
+          {/* Form Container */}
+          <View className="w-full bg-white p-6 rounded-xl shadow-md">
+            {!isLogin && (
+              <>
+                <InputField
+                  label="Full Name"
+                  value={name}
+                  setValue={setName}
+                  icon="user"
+                />
+                <InputField
+                  label="Email Address"
+                  value={email}
+                  setValue={setEmail}
+                  icon="mail"
+                  keyboardType="email-address"
+                />
+                <InputField
+                  label="Phone Number"
+                  value={phoneNumber}
+                  setValue={setPhoneNumber}
+                  icon="phone"
+                  keyboardType="phone-pad"
+                />
+              </>
+            )}
+
+            <InputField
+              label="User ID"
+              value={userId}
+              setValue={setUserId}
+              icon="hash"
+            />
+
+            <InputField
+              label="Password"
+              value={password}
+              setValue={setPassword}
+              icon="lock"
+              isPassword={true}
+            />
+
+            <TouchableOpacity
+              className={`mt-6 rounded-lg py-4 px-6 items-center justify-center ${
+                loading ? "bg-primary-light" : "bg-primary"
+              }`}
+              onPress={isLogin ? handleLogin : handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text className="text-white font-['Poppins-Bold'] text-lg">
+                  {isLogin ? "LOGIN" : "SIGN UP"}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="mt-5 items-center"
+              onPress={() => setIsLogin(!isLogin)}
+            >
+              <Text className="text-primary font-['Poppins'] text-base">
+                {isLogin
+                  ? "Don't have an account? Sign up here"
+                  : "Already have an account? Log in here"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom decoration */}
+          <View className="w-16 h-1 bg-primary mt-12" />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#9370DB",
-  },
-  innerContainer: {
-    width: "90%",
-    padding: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    alignItems: "center",
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 20,
-  },
-  label: {
-    alignSelf: "flex-start",
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 5,
-  },
-  input: {
-    height: 40,
-    borderColor: "#ddd",
-    borderBottomWidth: 1,
-    width: "100%",
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    fontSize: 16,
-    color: "#000",
-  },
-  button: {
-    backgroundColor: "#ffA500",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginBottom: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  error: {
-    color: "#ff4d4d",
-    marginBottom: 10,
-  },
-  linkText: {
-    color: "#007bff",
-    fontSize: 14,
-    textDecorationLine: "underline",
-  },
-});
 
 export default AuthScreen;

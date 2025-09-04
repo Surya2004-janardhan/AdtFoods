@@ -4,19 +4,19 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  StyleSheet,
   FlatList,
+  StatusBar,
+  ActivityIndicator,
 } from "react-native";
-
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import axios from "../axiosConfig";
-// import axios from "../axiosConfig"
-import { useRouter } from "expo-router"; // ✅ Use Expo Router
+import { useRouter } from "expo-router";
 
 const HomeScreen = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const router = useRouter(); // ✅ Use router instead of navigation
+  const router = useRouter();
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -35,52 +35,86 @@ const HomeScreen = () => {
   }, []);
 
   const handleNavigate = (screen) => {
-    router.push(`/${screen}`); // ✅ Navigate using router.push()
+    router.push(`/${screen}`);
   };
 
   const handleLogout = () => {
     global.userProfile = null;
-    router.push("/AuthScreen"); // ✅ Ensure 'auth.js' exists in `/app`
+    router.push("/AuthScreen");
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View className="flex-1 items-center justify-center bg-accent-cream">
+        <ActivityIndicator size="large" color="#FF6B00" />
+        <Text className="mt-4 text-secondary font-['Poppins'] text-lg">
+          Loading restaurants...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{error}</Text>
+      <View className="flex-1 items-center justify-center bg-accent-cream p-5">
+        <MaterialIcons name="error-outline" size={64} color="#FF6B00" />
+        <Text className="text-secondary font-['Poppins-Bold'] text-lg mt-4">
+          {error}
+        </Text>
+        <TouchableOpacity
+          className="mt-6 bg-primary rounded-full py-3 px-8"
+          onPress={() => fetchRestaurants()}
+        >
+          <Text className="text-white font-['Poppins'] text-base">
+            Try Again
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
-  // console.log(restaurants);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>ADITYA FOODS</Text>
-      <Text style={styles.subtitle}>
-        Discover the best restaurants near you
-      </Text>
+    <View className="flex-1 bg-accent-cream">
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF8EE" />
+
+      {/* Header */}
+      <View className="px-6 pt-14 pb-4 bg-primary">
+        <Text className="font-['PlayfairDisplay-Bold'] text-3xl text-white text-center">
+          ADITYA FOODS
+        </Text>
+        <Text className="font-['Poppins'] text-base text-accent-off text-center mt-1">
+          Discover the best restaurants near you
+        </Text>
+      </View>
+
       <FlatList
         data={restaurants}
         keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            className="mx-5 my-3 bg-white rounded-xl overflow-hidden shadow-lg"
             onPress={() => handleNavigate("UserFoodItemsScreen")}
+            activeOpacity={0.7}
           >
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <View style={styles.cardContent}>
-              <Text style={styles.restaurantName}>{item.name}</Text>
-              <Text style={styles.location}>{item.address}</Text>
+            <Image
+              source={{ uri: item.image }}
+              className="w-full h-40"
+              resizeMode="cover"
+            />
+            <View className="p-4 border-l-4 border-primary">
+              <Text className="font-['PlayfairDisplay-Bold'] text-xl text-secondary">
+                {item.name}
+              </Text>
+              <View className="flex-row items-center mt-2">
+                <Feather name="map-pin" size={16} color="#FF6B00" />
+                <Text className="font-['Poppins'] text-secondary-light ml-2">
+                  {item.address}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ paddingBottom: 90, paddingTop: 10 }}
       />
 
       {/* <FlatList
@@ -103,133 +137,41 @@ const HomeScreen = () => {
         )}
         contentContainerStyle={styles.listContainer}
       /> */}
-      <View style={styles.navbar}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => handleNavigate("OrdersScreen")}
-        >
-          <View style={styles.icon}>
-            <Text style={styles.iconText}>📝</Text>
-          </View>
-          <Text style={styles.navText}>Orders</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => handleNavigate("AccountScreen")}
-        >
-          <View style={styles.icon}>
-            <Text style={styles.iconText}>👤</Text>
-          </View>
-          <Text style={styles.navText}>Account</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={handleLogout}>
-          <View style={styles.icon}>
-            <Text style={styles.iconText}>🚪</Text>
-          </View>
-          <Text style={styles.navText}>Logout</Text>
-        </TouchableOpacity>
+      {/* Bottom Navigation */}
+      <View className="absolute bottom-0 left-0 right-0 bg-secondary rounded-t-2xl shadow-xl">
+        <View className="flex-row justify-around items-center py-4">
+          <TouchableOpacity
+            className="items-center"
+            onPress={() => handleNavigate("OrdersScreen")}
+          >
+            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
+              <Feather name="file-text" size={24} color="#FF6B00" />
+            </View>
+            <Text className="text-accent text-xs font-['Poppins']">Orders</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="items-center"
+            onPress={() => handleNavigate("AccountScreen")}
+          >
+            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
+              <Feather name="user" size={24} color="#FF6B00" />
+            </View>
+            <Text className="text-accent text-xs font-['Poppins']">
+              Account
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity className="items-center" onPress={handleLogout}>
+            <View className="w-12 h-12 rounded-full bg-accent-off justify-center items-center mb-1">
+              <MaterialIcons name="logout" size={24} color="#FF6B00" />
+            </View>
+            <Text className="text-accent text-xs font-['Poppins']">Logout</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 };
-
-// ✅ Styles remain unchanged
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#EEE8AA",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#7f8c8d",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  listContainer: {
-    paddingBottom: 70,
-  },
-  card: {
-    flexDirection: "row",
-    marginBottom: 20,
-    backgroundColor: "#ffffff",
-    borderRadius: 15,
-    overflow: "hidden",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  image: {
-    width: 150,
-    height: 100,
-    borderRadius: 15,
-  },
-  cardContent: {
-    flex: 1,
-    padding: 15,
-    justifyContent: "center",
-    backgroundColor: "#ecf0f1",
-  },
-  restaurantName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2c3e50",
-  },
-  location: {
-    fontSize: 16,
-    color: "#95a5a6",
-  },
-  navbar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 10,
-    backgroundColor: "#ff8c00",
-    borderRadius: 10,
-    marginBottom: 10,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    alignItems: "center",
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  iconText: {
-    fontSize: 20,
-    color: "#f8f8f8",
-  },
-  navText: {
-    color: "#ffffff",
-    fontSize: 12,
-  },
-  error: {
-    color: "red",
-    fontSize: 18,
-    textAlign: "center",
-  },
-});
 
 export default HomeScreen;
