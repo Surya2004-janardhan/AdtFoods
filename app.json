@@ -4,7 +4,7 @@
     "slug": "fin2",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/1.png",
+    "icon": "./assets/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
