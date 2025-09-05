@@ -21,6 +21,7 @@ const orderSchema = new mongoose.Schema({
   orderNumber: {
     type: Number,
     unique: true,
+    default: 1,
   },
   userId: {
     type: String,

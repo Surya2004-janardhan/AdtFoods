@@ -96,9 +96,40 @@ const createOrder = async (req, res) => {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Get next order number
-    const lastOrder = await Order.findOne().sort({ orderNumber: -1 });
-    const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1;
+    // Get next order number with better error handling
+    let nextOrderNumber = 1;
+    try {
+      const lastOrder = await Order.findOne().sort({ orderNumber: -1 });
+      console.log(
+        "Last order found:",
+        lastOrder
+          ? {
+              id: lastOrder._id,
+              orderNumber: lastOrder.orderNumber,
+              type: typeof lastOrder.orderNumber,
+            }
+          : "No orders found"
+      );
+
+      if (
+        lastOrder &&
+        typeof lastOrder.orderNumber === "number" &&
+        !isNaN(lastOrder.orderNumber)
+      ) {
+        nextOrderNumber = lastOrder.orderNumber + 1;
+      } else if (lastOrder) {
+        // If last order exists but orderNumber is invalid, count all orders + 1
+        const orderCount = await Order.countDocuments();
+        nextOrderNumber = orderCount + 1;
+      }
+    } catch (error) {
+      console.error("Error getting last order number:", error);
+      // Fallback to counting all orders
+      const orderCount = await Order.countDocuments();
+      nextOrderNumber = orderCount + 1;
+    }
+
+    console.log("Next order number:", nextOrderNumber);
 
     const newOrder = new Order({
       orderNumber: nextOrderNumber,

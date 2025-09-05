@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CartContext } from "../context/CartContext";
 import OrdersContext from "../context/OrdersContext";
 import BottomNavigation from "../components/BottomNavigation";
-import Toast from "react-native-toast-message";
+import CustomNotification from "../components/CustomNotification";
 import RazorpayCheckout from "react-native-razorpay";
 import { API_CONFIG, RAZORPAY_CONFIG } from "../config/apiConfig";
 
@@ -30,6 +30,7 @@ export default function PaymentScreen() {
   } = useContext(CartContext);
   const { createOrder } = useContext(OrdersContext);
   const [processing, setProcessing] = useState(false);
+  const [notification, setNotification] = useState({ message: '', type: '', visible: false });
   const router = useRouter();
 
   const cartItems = getCartItems();
@@ -82,7 +83,17 @@ export default function PaymentScreen() {
       // Fallback to timestamp if API fails
       return Date.now() % 100000;
     }
-  }; // Main place order function with Razorpay
+  };
+
+  // Helper function to show notifications
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type, visible: true });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, visible: false }));
+    }, 3000);
+  };
+
+  // Main place order function with Razorpay
   const placeOrder = async () => {
     console.log("🚀 Place Order button pressed");
     console.log("Cart items:", cartItems);
@@ -90,11 +101,7 @@ export default function PaymentScreen() {
     console.log("Total amount:", total);
 
     if (!currentRestaurantId || cartItems.length === 0) {
-      Toast.show({
-        type: "error",
-        text1: "Invalid Order",
-        text2: "Please add items to your cart",
-      });
+      showNotification("Please add items to your cart", "error");
       return;
     }
 
@@ -108,11 +115,7 @@ export default function PaymentScreen() {
       console.log("📱 User data:", { userId, userName, tokenExists: !!token });
 
       if (!userId || !token) {
-        Toast.show({
-          type: "error",
-          text1: "Authentication Required",
-          text2: "Please login to place order",
-        });
+        showNotification("Please login to place order", "error");
         setProcessing(false);
         return;
       }
@@ -211,48 +214,39 @@ export default function PaymentScreen() {
           const result = await createOrder(orderData);
           console.log("📝 Order creation result:", result);
 
-          if (result.success) {
-            Toast.show({
-              type: "success",
-              text1: "Payment Successful",
-              text2: `Order #${orderId} placed successfully!`,
-              visibilityTime: 3000,
-            });
+          // Clear cart immediately after payment success
+          clearRestaurantCart();
+          console.log("🛒 Cart cleared successfully");
 
-            // Clear cart after showing success message
-            setTimeout(() => {
-              clearRestaurantCart();
-              console.log("🛒 Cart cleared successfully");
-            }, 500);
+          // Navigate to orders screen immediately with proper stack management
+          console.log("🚀 Navigating to: /OrdersScreen after payment success");
 
-            // Clear navigation stack and navigate to orders
-            setTimeout(() => {
-              router.push("/OrdersScreen");
-              // Remove payment screen from history
-              router.dismissAll();
-            }, 1000);
-          } else {
-            console.error("❌ Order creation failed:", result.error);
+          // Use push to HomeScreen first, then push to OrdersScreen
+          // This creates the proper navigation stack: HomeScreen -> OrdersScreen
+          router.dismissAll();
+          router.push("/HomeScreen");
+          router.push("/OrdersScreen");
 
-            // Even if order creation fails, payment was successful
-            // Show a different message and still clear cart
-            clearRestaurantCart();
-
-            Toast.show({
-              type: "error",
-              text1: "Payment Successful but Order Issue",
-              text2:
-                "Payment completed but order creation failed. Please contact support.",
-              visibilityTime: 5000,
-            });
-
-            // Still navigate to orders page
-            setTimeout(() => {
-              router.push("/OrdersScreen");
-              // Remove payment screen from history
-              router.dismissAll();
-            }, 2000);
-          }
+          // Show success toast after navigation (will appear on OrdersScreen)
+          setTimeout(() => {
+            if (result.success) {
+              Toast.show({
+                type: "success",
+                text1: "Payment Successful",
+                text2: `Order #${orderId} placed successfully!`,
+                visibilityTime: 2000,
+              });
+            } else {
+              console.error("❌ Order creation failed:", result.error);
+              Toast.show({
+                type: "error",
+                text1: "Payment Successful but Order Issue",
+                text2:
+                  "Payment completed but order creation failed. Please contact support.",
+                visibilityTime: 3000,
+              });
+            }
+          }, 100);
         })
         .catch((error) => {
           console.error("❌ Razorpay payment error:", error);
@@ -267,7 +261,11 @@ export default function PaymentScreen() {
             type: isCancelled ? "info" : "error",
             text1: isCancelled ? "Payment Cancelled" : "Payment Failed",
             text2: errorMessage,
+            visibilityTime: 4000,
           });
+
+          // Navigate back to cart page when payment fails/cancelled
+          router.push("/UserCartScreen");
         });
     } catch (error) {
       console.error("Error processing payment:", error);
@@ -275,7 +273,11 @@ export default function PaymentScreen() {
         type: "error",
         text1: "Order Error",
         text2: error.message || "Failed to process order",
+        visibilityTime: 4000,
       });
+
+      // Navigate back to cart on any error
+      router.push("/UserCartScreen");
     } finally {
       setProcessing(false);
     }

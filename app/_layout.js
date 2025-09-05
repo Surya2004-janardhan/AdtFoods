@@ -78,7 +78,13 @@ export default function Layout() {
                 <Stack.Screen name="UserCartScreen" />
                 <Stack.Screen name="StaffFoodItemsScreen" />
                 <Stack.Screen name="StaffOrdersScreen" />
-                <Stack.Screen name="OrdersScreen" />
+                <Stack.Screen
+                  name="OrdersScreen"
+                  options={{
+                    gestureEnabled: true,
+                    gestureDirection: "horizontal",
+                  }}
+                />
                 <Stack.Screen name="NotificationsScreen" />
                 <Stack.Screen name="AccountScreen" />
               </Stack>
