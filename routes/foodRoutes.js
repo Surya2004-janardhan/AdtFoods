@@ -18,6 +18,12 @@ router.put(
   validateRequest(updateFoodItemSchema),
   foodController.updateFoodItem
 );
+// Restaurant routes
 router.get("/restaurants", foodController.getAllRestaurants);
+router.get("/restaurants/:id", foodController.getRestaurantById);
+router.get(
+  "/restaurants/:restaurantId/menu",
+  foodController.getFoodItemsByRestaurant
+);
 
 module.exports = router;

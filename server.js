@@ -8,6 +8,7 @@ const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 // Import middleware
 const errorHandler = require("./middleware/errorHandler");
@@ -33,6 +34,7 @@ app.use(morgan("dev")); // HTTP request logger
 app.use("/", authRoutes);
 app.use("/", foodRoutes);
 app.use("/", orderRoutes);
+app.use("/payment", paymentRoutes);
 
 // Home route
 app.get("/", (req, res) => {

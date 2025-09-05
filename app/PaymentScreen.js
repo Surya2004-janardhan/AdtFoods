@@ -18,54 +18,40 @@ import { CartContext } from "../context/CartContext";
 import OrdersContext from "../context/OrdersContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
+import RazorpayCheckout from "react-native-razorpay";
+import { API_CONFIG, RAZORPAY_CONFIG } from "../config/apiConfig";
 
 export default function PaymentScreen() {
-  const { cartItems, clearCart } = useContext(CartContext);
+  const {
+    getCartItems,
+    clearRestaurantCart,
+    calculateTotal,
+    getCurrentRestaurantInfo,
+    currentRestaurantId,
+  } = useContext(CartContext);
   const { createOrder } = useContext(OrdersContext);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
   const [processing, setProcessing] = useState(false);
   const router = useRouter();
 
-  const calculateTotal = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+  const cartItems = getCartItems();
+  const restaurantInfo = getCurrentRestaurantInfo();
+
+  const calculateSubtotal = () => {
+    return calculateTotal();
   };
 
-  const deliveryFee = 30;
-  const tax = Math.round(calculateTotal() * 0.08);
-  const total = calculateTotal() + deliveryFee + tax;
+  const deliveryFee = restaurantInfo?.deliveryFee || 30;
+  const tax = Math.round(calculateSubtotal() * 0.08);
+  const total = calculateSubtotal() + deliveryFee + tax;
 
   const processPayment = async () => {
-    if (selectedPaymentMethod === "card") {
-      if (!cardNumber || !expiryDate || !cvv) {
-        Toast.show({
-          type: "error",
-          text1: "Incomplete Details",
-          text2: "Please fill in all card details",
-        });
-        return;
-      }
-      if (cardNumber.length !== 16) {
-        Toast.show({
-          type: "error",
-          text1: "Invalid Card",
-          text2: "Card number must be 16 digits",
-        });
-        return;
-      }
-      if (cvv.length !== 3) {
-        Toast.show({
-          type: "error",
-          text1: "Invalid CVV",
-          text2: "CVV must be 3 digits",
-        });
-        return;
-      }
+    if (!currentRestaurantId || cartItems.length === 0) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Order",
+        text2: "Please add items to your cart",
+      });
+      return;
     }
 
     setProcessing(true);
@@ -73,62 +59,133 @@ export default function PaymentScreen() {
     try {
       const userId = await AsyncStorage.getItem("userId");
       const userName = (await AsyncStorage.getItem("userName")) || "Customer";
+      const token = await AsyncStorage.getItem("token");
 
-      // Create order data
-      const orderData = {
-        userId: userId,
-        name: userName,
-        items: cartItems.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-        total: total,
-        paymentMethod: selectedPaymentMethod,
-        note: "",
+      // Create Razorpay order first
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT.CREATE_ORDER}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            amount: total,
+            currency: RAZORPAY_CONFIG.CURRENCY,
+          }),
+        }
+      );
+
+      const razorpayOrderData = await response.json();
+
+      if (!razorpayOrderData.success) {
+        throw new Error("Failed to create payment order");
+      }
+
+      // Configure Razorpay options
+      const options = {
+        description: `Order from ${restaurantInfo?.name || "Restaurant"}`,
+        image: RAZORPAY_CONFIG.COMPANY_LOGO,
+        currency: RAZORPAY_CONFIG.CURRENCY,
+        key: RAZORPAY_CONFIG.KEY_ID,
+        amount: razorpayOrderData.amount,
+        order_id: razorpayOrderData.orderId,
+        name: RAZORPAY_CONFIG.COMPANY_NAME,
+        prefill: {
+          email: "customer@example.com",
+          contact: "9999999999",
+          name: userName,
+        },
+        theme: {
+          color: RAZORPAY_CONFIG.THEME_COLOR,
+        },
       };
 
-      // Create order via context
-      const result = await createOrder(orderData);
+      // Open Razorpay payment gateway
+      RazorpayCheckout.open(options)
+        .then(async (data) => {
+          // Payment successful - verify payment
+          const verifyResponse = await fetch(
+            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT.VERIFY_PAYMENT}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: data.razorpay_order_id,
+                razorpay_payment_id: data.razorpay_payment_id,
+                razorpay_signature: data.razorpay_signature,
+              }),
+            }
+          );
 
-      if (result.success) {
-        clearCart();
+          const verifyResult = await verifyResponse.json();
 
-        Toast.show({
-          type: "success",
-          text1: "Order Placed",
-          text2: "Your order has been placed successfully!",
+          if (verifyResult.success) {
+            // Create order in database after successful payment
+            const orderData = {
+              userId: userId,
+              name: userName,
+              restaurant: currentRestaurantId,
+              items: cartItems.map((item) => ({
+                food: item._id,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              totalAmount: total,
+              deliveryFee: deliveryFee,
+              tax: tax,
+              paymentMethod: "razorpay",
+              restaurantName: restaurantInfo?.name || "Restaurant",
+              restaurantLocation:
+                restaurantInfo?.location || "Unknown Location",
+              razorpayOrderId: data.razorpay_order_id,
+              razorpayPaymentId: data.razorpay_payment_id,
+              note: "",
+            };
+
+            const result = await createOrder(orderData);
+
+            if (result.success) {
+              clearRestaurantCart();
+
+              Toast.show({
+                type: "success",
+                text1: "Payment Successful",
+                text2: "Your order has been placed successfully!",
+              });
+
+              // Navigate to orders page instead of payment success
+              router.replace("/OrdersScreen");
+            } else {
+              throw new Error(result.error || "Failed to create order");
+            }
+          } else {
+            throw new Error("Payment verification failed");
+          }
+        })
+        .catch((error) => {
+          // Payment failed or cancelled
+          console.log("Payment error:", error);
+          Toast.show({
+            type: "error",
+            text1: "Payment Failed",
+            text2: error.description || "Payment was cancelled or failed",
+          });
         });
-
-        router.push("/PaymentSuccessScreen");
-      } else {
-        throw new Error(result.error || "Failed to create order");
-      }
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("Error processing payment:", error);
       Toast.show({
         type: "error",
-        text1: "Order Failed",
-        text2: error.response?.data?.error || "Failed to place order",
+        text1: "Payment Error",
+        text2: error.message || "Failed to process payment",
       });
     } finally {
       setProcessing(false);
     }
-  };
-
-  const formatCardNumber = (text) => {
-    const cleaned = text.replace(/\D/g, "");
-    const formatted = cleaned.replace(/(.{4})/g, "$1 ").trim();
-    return formatted;
-  };
-
-  const formatExpiryDate = (text) => {
-    const cleaned = text.replace(/\D/g, "");
-    if (cleaned.length >= 2) {
-      return cleaned.substring(0, 2) + "/" + cleaned.substring(2, 4);
-    }
-    return cleaned;
   };
 
   const renderCartItem = ({ item }) => (
@@ -141,55 +198,6 @@ export default function PaymentScreen() {
       </View>
       <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
     </View>
-  );
-
-  const PaymentMethodCard = ({ icon, title, method, description }) => (
-    <TouchableOpacity
-      style={[
-        styles.paymentMethod,
-        selectedPaymentMethod === method && styles.selectedPaymentMethod,
-      ]}
-      onPress={() => setSelectedPaymentMethod(method)}
-    >
-      <View style={styles.paymentMethodLeft}>
-        <View
-          style={[
-            styles.paymentIcon,
-            selectedPaymentMethod === method && styles.selectedPaymentIcon,
-          ]}
-        >
-          <MaterialCommunityIcons
-            name={icon}
-            size={24}
-            color={selectedPaymentMethod === method ? "#FFFFFF" : "#FF6B00"}
-          />
-        </View>
-        <View>
-          <Text
-            style={[
-              styles.paymentMethodTitle,
-              selectedPaymentMethod === method &&
-                styles.selectedPaymentMethodTitle,
-            ]}
-          >
-            {title}
-          </Text>
-          {description && (
-            <Text style={styles.paymentMethodDescription}>{description}</Text>
-          )}
-        </View>
-      </View>
-      <View
-        style={[
-          styles.radioButton,
-          selectedPaymentMethod === method && styles.selectedRadioButton,
-        ]}
-      >
-        {selectedPaymentMethod === method && (
-          <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
-        )}
-      </View>
-    </TouchableOpacity>
   );
 
   return (
@@ -222,7 +230,7 @@ export default function PaymentScreen() {
           <FlatList
             data={cartItems}
             renderItem={renderCartItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             scrollEnabled={false}
             ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
           />
@@ -231,7 +239,7 @@ export default function PaymentScreen() {
 
           <View style={styles.totalRow}>
             <Text style={styles.totalText}>Subtotal</Text>
-            <Text style={styles.totalAmount}>₹{calculateTotal()}</Text>
+            <Text style={styles.totalAmount}>₹{calculateSubtotal()}</Text>
           </View>
           <View style={styles.totalRow}>
             <Text style={styles.totalText}>Delivery Fee</Text>
@@ -248,141 +256,19 @@ export default function PaymentScreen() {
           </View>
         </View>
 
-        {/* Payment Methods */}
+        {/* Secure Information */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="wallet" size={20} color="#FF6B00" />
-            <Text style={styles.sectionTitle}>Payment Method</Text>
+          <View style={styles.secureInfo}>
+            <MaterialCommunityIcons
+              name="shield-check"
+              size={16}
+              color="#4CAF50"
+            />
+            <Text style={styles.secureText}>
+              Your payment information is secure and encrypted
+            </Text>
           </View>
-
-          <PaymentMethodCard
-            icon="credit-card"
-            title="Credit/Debit Card"
-            method="card"
-            description="Visa, Mastercard, Rupay"
-          />
-
-          <PaymentMethodCard
-            icon="cellphone"
-            title="UPI Payment"
-            method="upi"
-            description="Google Pay, PhonePe, Paytm"
-          />
-
-          <PaymentMethodCard
-            icon="cash"
-            title="Cash on Delivery"
-            method="cash"
-            description="Pay when order arrives"
-          />
         </View>
-
-        {/* Card Details */}
-        {selectedPaymentMethod === "card" && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="credit-card-outline"
-                size={20}
-                color="#FF6B00"
-              />
-              <Text style={styles.sectionTitle}>Card Details</Text>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Card Number</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="1234 5678 9012 3456"
-                value={formatCardNumber(cardNumber)}
-                onChangeText={(text) =>
-                  setCardNumber(text.replace(/\s/g, "").replace(/\D/g, ""))
-                }
-                keyboardType="numeric"
-                maxLength={19}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, styles.halfInput]}>
-                <Text style={styles.inputLabel}>Expiry Date</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="MM/YY"
-                  value={expiryDate}
-                  onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
-                  maxLength={5}
-                />
-              </View>
-              <View style={[styles.inputGroup, styles.halfInput]}>
-                <Text style={styles.inputLabel}>CVV</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="123"
-                  value={cvv}
-                  onChangeText={(text) => setCvv(text.replace(/\D/g, ""))}
-                  keyboardType="numeric"
-                  maxLength={3}
-                  secureTextEntry
-                />
-              </View>
-            </View>
-
-            <View style={styles.secureInfo}>
-              <MaterialCommunityIcons
-                name="shield-check"
-                size={16}
-                color="#4CAF50"
-              />
-              <Text style={styles.secureText}>
-                Your payment information is secure and encrypted
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {selectedPaymentMethod === "upi" && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="qrcode" size={20} color="#FF6B00" />
-              <Text style={styles.sectionTitle}>UPI Payment</Text>
-            </View>
-            <View style={styles.upiInfo}>
-              <MaterialCommunityIcons
-                name="information"
-                size={20}
-                color="#2196F3"
-              />
-              <Text style={styles.upiText}>
-                You will be redirected to your UPI app to complete the payment
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {selectedPaymentMethod === "cash" && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="hand-coin"
-                size={20}
-                color="#FF6B00"
-              />
-              <Text style={styles.sectionTitle}>Cash Payment</Text>
-            </View>
-            <View style={styles.cashInfo}>
-              <MaterialCommunityIcons
-                name="information"
-                size={20}
-                color="#FF9800"
-              />
-              <Text style={styles.cashText}>
-                Please keep exact change ready. Our delivery partner will
-                collect ₹{total}
-              </Text>
-            </View>
-          </View>
-        )}
       </ScrollView>
 
       {/* Footer */}
@@ -404,11 +290,7 @@ export default function PaymentScreen() {
                 size={20}
                 color="#FFFFFF"
               />
-              <Text style={styles.payButtonText}>
-                {selectedPaymentMethod === "cash"
-                  ? `Place Order ₹${total}`
-                  : `Pay ₹${total}`}
-              </Text>
+              <Text style={styles.payButtonText}>Place Order ₹{total}</Text>
               <MaterialCommunityIcons
                 name="arrow-right"
                 size={20}
@@ -450,7 +332,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    fontFamily: "PlayfairDisplay-Bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 20,
     color: "#333333",
   },
@@ -556,92 +438,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#FF6B00",
   },
-  paymentMethod: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: "#FAFAFA",
-  },
-  selectedPaymentMethod: {
-    borderColor: "#FF6B00",
-    backgroundColor: "#FFF8F0",
-  },
-  paymentMethodLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  paymentIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FFF8F0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  selectedPaymentIcon: {
-    backgroundColor: "#FF6B00",
-  },
-  paymentMethodTitle: {
-    fontFamily: "Poppins-Medium",
-    fontSize: 14,
-    color: "#333333",
-  },
-  selectedPaymentMethodTitle: {
-    color: "#FF6B00",
-  },
-  paymentMethodDescription: {
-    fontFamily: "Poppins",
-    fontSize: 12,
-    color: "#666666",
-    marginTop: 2,
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#E0E0E0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  selectedRadioButton: {
-    borderColor: "#FF6B00",
-    backgroundColor: "#FF6B00",
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontFamily: "Poppins-Medium",
-    fontSize: 12,
-    color: "#333333",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 14,
-    fontFamily: "Poppins",
-    color: "#333333",
-    backgroundColor: "#FAFAFA",
-  },
-  row: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  halfInput: {
-    flex: 1,
-  },
   secureInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -655,34 +451,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontSize: 12,
     color: "#4CAF50",
-    flex: 1,
-  },
-  upiInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E3F2FD",
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  upiText: {
-    fontFamily: "Poppins",
-    fontSize: 14,
-    color: "#1976D2",
-    flex: 1,
-  },
-  cashInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF3E0",
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  cashText: {
-    fontFamily: "Poppins",
-    fontSize: 14,
-    color: "#F57C00",
     flex: 1,
   },
   footer: {

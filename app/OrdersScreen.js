@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -18,8 +19,10 @@ import Toast from "react-native-toast-message";
 
 const OrdersScreen = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const { getOrdersForUser, updateOrderStatus } = useContext(OrdersContext);
 
@@ -28,21 +31,24 @@ const OrdersScreen = () => {
       try {
         setLoading(true);
         const role = (await AsyncStorage.getItem("userRole")) || "user";
-        const userId = await AsyncStorage.getItem("userId");
+        const userId = (await AsyncStorage.getItem("userId")) || "testuser123"; // Default for testing
         setUserRole(role);
 
         let ordersData = [];
         if (role === "staff") {
-          // Staff can see all orders - use context function
-          ordersData = await getOrdersForUser(null, true); // Pass null for userId and true for isStaff
+          // Staff can see all orders
+          ordersData = await getOrdersForUser(null, true);
         } else {
-          // Users see only their own orders - use context function
+          // Users see only their own orders
           ordersData = await getOrdersForUser(userId, false);
         }
 
-        setOrders(ordersData);
+        setOrders(ordersData || []);
+        setFilteredOrders(ordersData || []);
       } catch (error) {
         console.error("Error fetching orders:", error);
+        setOrders([]);
+        setFilteredOrders([]);
         Toast.show({
           type: "error",
           text1: "Error",
@@ -56,27 +62,43 @@ const OrdersScreen = () => {
     fetchOrders();
   }, []);
 
+  // Filter orders based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredOrders(orders);
+    } else {
+      const filtered = orders.filter(
+        (order) =>
+          order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.restaurant?.name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          order.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.items?.some((item) =>
+            item.food?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+      );
+      setFilteredOrders(filtered);
+    }
+  }, [searchQuery, orders]);
+
   const getStatusColor = (status) => {
     switch (status) {
-      case "completed":
-        return "#4CAF50";
-      case "processing":
-        return "#FF9800";
+      case "ready_to_pick":
+        return "#4CAF50"; // Green
       case "pending":
-        return "#2196F3";
+        return "#FF9800"; // Orange
       case "cancelled":
-        return "#F44336";
+        return "#F44336"; // Red
       default:
-        return "#9E9E9E";
+        return "#757575"; // Gray
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case "completed":
-        return "Completed";
-      case "processing":
-        return "Processing";
+      case "ready_to_pick":
+        return "Ready to Pick";
       case "pending":
         return "Pending";
       case "cancelled":
@@ -85,6 +107,19 @@ const OrdersScreen = () => {
         return "Unknown";
     }
   };
+
+  // const getStatusColor = (status) => {
+  //   switch (status) {
+  //     case "ready_to_pick":
+  //       return "#4CAF50"; // Green
+  //     case "pending":
+  //       return "#FF9800"; // Orange
+  //     case "cancelled":
+  //       return "#F44336"; // Red
+  //     default:
+  //       return "#757575"; // Gray
+  //   }
+  // };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
@@ -114,26 +149,27 @@ const OrdersScreen = () => {
   };
 
   const renderOrderItem = ({ item }) => (
-    <View className="bg-white mb-4 mx-4 rounded-xl shadow-lg border border-gray-100">
-      <View className="p-5">
+    <View style={styles.orderCard}>
+      <View style={styles.orderContent}>
         {/* Header */}
-        <View className="flex-row justify-between items-center mb-4">
-          <Text
-            className="text-lg font-semibold text-gray-900"
-            style={{ fontFamily: "Poppins-SemiBold" }}
-          >
+        <View style={styles.orderHeader}>
+          <Text style={[styles.orderTitle, { fontFamily: "Poppins-SemiBold" }]}>
             Order #{item._id?.slice(-6) || "N/A"}
           </Text>
           <View
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: getStatusColor(item.status) + "20" }}
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(item.status) + "20" },
+            ]}
           >
             <Text
-              className="text-sm font-medium"
-              style={{
-                color: getStatusColor(item.status),
-                fontFamily: "Poppins-Medium",
-              }}
+              style={[
+                styles.statusText,
+                {
+                  color: getStatusColor(item.status),
+                  fontFamily: "Poppins-Medium",
+                },
+              ]}
             >
               {getStatusText(item.status)}
             </Text>
@@ -141,15 +177,52 @@ const OrdersScreen = () => {
         </View>
 
         {/* Restaurant Info */}
-        <View className="flex-row items-center mb-3">
-          <MaterialCommunityIcons name="store" size={18} color="#666" />
-          <Text
-            className="ml-2 text-gray-700"
-            style={{ fontFamily: "Poppins-Regular" }}
-          >
-            {item.restaurant?.name || "Restaurant"}
-          </Text>
+        <View className="mb-3">
+          <View className="flex-row items-center mb-2">
+            <MaterialCommunityIcons name="store" size={18} color="#666" />
+            <Text
+              className="ml-2 text-gray-700 font-semibold"
+              style={{ fontFamily: "Poppins-Medium" }}
+            >
+              {item.restaurantName || item.restaurant?.name || "Restaurant"}
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            <MaterialCommunityIcons name="map-marker" size={18} color="#666" />
+            <Text
+              className="ml-2 text-gray-600"
+              style={{ fontFamily: "Poppins-Regular" }}
+            >
+              {item.restaurantLocation ||
+                item.restaurant?.location ||
+                "Location not available"}
+            </Text>
+          </View>
         </View>
+
+        {/* OTP Display */}
+        {item.otp && (
+          <View className="mb-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <Text
+              className="text-orange-700 text-sm font-medium mb-1"
+              style={{ fontFamily: "Poppins-Medium" }}
+            >
+              Pickup OTP:
+            </Text>
+            <Text
+              className="text-orange-900 text-xl font-bold"
+              style={{ fontFamily: "Poppins-Bold" }}
+            >
+              {item.otp}
+            </Text>
+            <Text
+              className="text-orange-600 text-xs mt-1"
+              style={{ fontFamily: "Poppins-Regular" }}
+            >
+              Show this OTP to the restaurant for order pickup
+            </Text>
+          </View>
+        )}
 
         {/* Order Items */}
         <View className="mb-4">
@@ -217,7 +290,7 @@ const OrdersScreen = () => {
 
         {/* Staff Controls */}
         {userRole === "staff" &&
-          item.status !== "completed" &&
+          item.status !== "ready_to_pick" &&
           item.status !== "cancelled" && (
             <View className="border-t border-gray-100 pt-3">
               <Text
@@ -227,31 +300,27 @@ const OrdersScreen = () => {
                 Update Status:
               </Text>
               <View className="flex-row flex-wrap">
-                {["pending", "processing", "completed", "cancelled"].map(
-                  (status) => (
-                    <TouchableOpacity
-                      key={status}
-                      onPress={() => handleUpdateOrderStatus(item._id, status)}
-                      className={`mr-2 mb-2 px-4 py-2 rounded-lg ${
-                        item.status === status
-                          ? "bg-blue-500"
-                          : "bg-gray-100 border border-gray-300"
+                {["pending", "ready_to_pick", "cancelled"].map((status) => (
+                  <TouchableOpacity
+                    key={status}
+                    onPress={() => handleUpdateOrderStatus(item._id, status)}
+                    className={`mr-2 mb-2 px-4 py-2 rounded-lg ${
+                      item.status === status
+                        ? "bg-blue-500"
+                        : "bg-gray-100 border border-gray-300"
+                    }`}
+                    disabled={item.status === status}
+                  >
+                    <Text
+                      className={`text-sm font-medium ${
+                        item.status === status ? "text-white" : "text-gray-700"
                       }`}
-                      disabled={item.status === status}
+                      style={{ fontFamily: "Poppins-Medium" }}
                     >
-                      <Text
-                        className={`text-sm font-medium ${
-                          item.status === status
-                            ? "text-white"
-                            : "text-gray-700"
-                        }`}
-                        style={{ fontFamily: "Poppins-Medium" }}
-                      >
-                        {getStatusText(status)}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
+                      {getStatusText(status)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
           )}
@@ -261,14 +330,11 @@ const OrdersScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
-        <View className="flex-1 justify-center items-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text
-            className="mt-4 text-gray-600"
-            style={{ fontFamily: "Poppins-Regular" }}
-          >
+          <Text style={[styles.loadingText, { fontFamily: "Poppins-Regular" }]}>
             Loading orders...
           </Text>
         </View>
@@ -277,7 +343,7 @@ const OrdersScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
       {/* Header */}
@@ -293,33 +359,76 @@ const OrdersScreen = () => {
             className="text-gray-600 mt-1"
             style={{ fontFamily: "Poppins-Regular" }}
           >
-            {orders.length} {orders.length === 1 ? "order" : "orders"} found
+            {filteredOrders.length}{" "}
+            {filteredOrders.length === 1 ? "order" : "orders"} found
           </Text>
+
+          {/* Search Bar */}
+          <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 mt-4">
+            <MaterialCommunityIcons name="magnify" size={20} color="#9CA3AF" />
+            <TextInput
+              className="flex-1 ml-3 text-gray-700"
+              style={{ fontFamily: "Poppins-Regular" }}
+              placeholder="Search orders..."
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <MaterialCommunityIcons
+                  name="close-circle"
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
 
       {/* Orders List */}
-      {orders.length === 0 ? (
+      {filteredOrders.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6">
-          <MaterialCommunityIcons name="receipt" size={80} color="#ccc" />
+          <MaterialCommunityIcons
+            name={searchQuery ? "magnify" : "receipt"}
+            size={80}
+            color="#ccc"
+          />
           <Text
             className="text-xl text-gray-500 mt-4 text-center"
             style={{ fontFamily: "Poppins-SemiBold" }}
           >
-            No orders found
+            {searchQuery ? "No matching orders found" : "No orders found"}
           </Text>
           <Text
             className="text-gray-400 mt-2 text-center"
             style={{ fontFamily: "Poppins-Regular" }}
           >
-            {userRole === "staff"
+            {searchQuery
+              ? "Try adjusting your search terms"
+              : userRole === "staff"
               ? "No orders have been placed yet."
-              : "You haven't placed any orders yet."}
+              : "You haven't placed any orders yet. Start by browsing restaurants!"}
           </Text>
+          {!searchQuery && userRole !== "staff" && (
+            <TouchableOpacity
+              className="bg-orange-500 rounded-xl px-6 py-3 mt-6"
+              onPress={() => router.push("/HomeScreen")}
+              activeOpacity={0.8}
+            >
+              <Text
+                className="text-white font-bold"
+                style={{ fontFamily: "Poppins-Bold" }}
+              >
+                Browse Restaurants
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
-          data={orders}
+          data={filteredOrders}
           renderItem={renderOrderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={{ paddingVertical: 16 }}
@@ -327,13 +436,62 @@ const OrdersScreen = () => {
         />
       )}
 
-      <BottomNavigation />
+      <BottomNavigation userRole={userRole} />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  // Any additional styles if needed
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#6b7280",
+    fontSize: 16,
+  },
+  orderCard: {
+    backgroundColor: "#ffffff",
+    marginBottom: 16,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  orderContent: {
+    padding: 20,
+  },
+  orderHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  orderTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });
 
 export default OrdersScreen;

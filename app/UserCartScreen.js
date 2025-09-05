@@ -12,21 +12,29 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import CartContext from "../context/CartContext";
+import { CartContext } from "../context/CartContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const UserCartScreen = () => {
-  const { cartItems, updateQuantity, removeFromCart, clearCart } =
-    useContext(CartContext);
+  const {
+    getCartItems,
+    updateQuantity,
+    removeFromCart,
+    clearRestaurantCart,
+    calculateTotal,
+    getCurrentRestaurantInfo,
+    currentRestaurantId,
+    hasCartItems,
+  } = useContext(CartContext);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const cartItems = getCartItems();
+  const restaurantInfo = getCurrentRestaurantInfo();
+
   const getTotalPrice = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+    return calculateTotal();
   };
 
   const handleUpdateQuantity = (itemId, newQuantity) => {
@@ -55,7 +63,7 @@ const UserCartScreen = () => {
           text: "Clear",
           style: "destructive",
           onPress: () => {
-            clearCart();
+            clearRestaurantCart();
             Toast.show({
               type: "success",
               text1: "Cart Cleared",
@@ -68,7 +76,7 @@ const UserCartScreen = () => {
   };
 
   const handleCheckout = () => {
-    if (cartItems.length === 0) {
+    if (!hasCartItems()) {
       Toast.show({
         type: "error",
         text1: "Empty Cart",
@@ -94,14 +102,14 @@ const UserCartScreen = () => {
         <View style={styles.quantityContainer}>
           <TouchableOpacity
             style={styles.quantityButton}
-            onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+            onPress={() => handleUpdateQuantity(item._id, item.quantity - 1)}
           >
             <MaterialCommunityIcons name="minus" size={16} color="#FF6B00" />
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
           <TouchableOpacity
             style={styles.quantityButton}
-            onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+            onPress={() => handleUpdateQuantity(item._id, item.quantity + 1)}
           >
             <MaterialCommunityIcons name="plus" size={16} color="#FF6B00" />
           </TouchableOpacity>
@@ -113,7 +121,7 @@ const UserCartScreen = () => {
         </Text>
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={() => handleUpdateQuantity(item.id, 0)}
+          onPress={() => handleUpdateQuantity(item._id, 0)}
         >
           <MaterialCommunityIcons name="delete" size={20} color="#FF4444" />
         </TouchableOpacity>
@@ -168,11 +176,29 @@ const UserCartScreen = () => {
         <EmptyCart />
       ) : (
         <>
+          {/* Restaurant Info */}
+          {restaurantInfo && (
+            <View className="bg-white mx-4 mt-4 rounded-xl p-4 shadow-sm border border-gray-100">
+              <Text
+                className="text-lg font-semibold text-gray-900"
+                style={{ fontFamily: "Poppins-Bold" }}
+              >
+                Order from {restaurantInfo.name}
+              </Text>
+              <Text
+                className="text-gray-600 text-sm"
+                style={{ fontFamily: "Poppins-Regular" }}
+              >
+                {restaurantInfo.location}
+              </Text>
+            </View>
+          )}
+
           {/* Cart Items List */}
           <FlatList
             data={cartItems}
             renderItem={renderCartItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
           />
@@ -253,7 +279,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    fontFamily: "PlayfairDisplay-Bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 20,
     color: "#333333",
   },
@@ -416,7 +442,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Space for bottom navigation
   },
   emptyTitle: {
-    fontFamily: "PlayfairDisplay-Bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 24,
     color: "#333333",
     textAlign: "center",

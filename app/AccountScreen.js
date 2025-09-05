@@ -177,7 +177,7 @@ const AccountScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Card */}
+        {/* Profile Card
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <MaterialCommunityIcons
@@ -192,7 +192,7 @@ const AccountScreen = () => {
           <Text style={styles.profileRole}>
             {userRole === "staff" ? "Staff Member" : "Customer"}
           </Text>
-        </View>
+        </View> */}
 
         {/* Profile Information */}
         <View style={styles.section}>
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: "center",
-    fontFamily: "PlayfairDisplay-Bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 20,
     color: "#333333",
   },
@@ -422,8 +422,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileItemLabel: {
-    fontFamily: "Poppins",
-    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+    fontSize: 16,
+    fontWeight: 800,
     color: "#666666",
     marginBottom: 2,
   },

@@ -3,20 +3,22 @@ import {
   View,
   Text,
   FlatList,
-  Image,
   TouchableOpacity,
   RefreshControl,
   StatusBar,
   ActivityIndicator,
   SafeAreaView,
+  Dimensions,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import CartContext from "../context/CartContext";
+import { CartContext } from "../context/CartContext";
 import FoodContext from "../context/FoodContext";
-import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
+
+const { width } = Dimensions.get("window");
 
 const UserFoodItemsScreen = () => {
   const [foodItems, setFoodItems] = useState([]);
@@ -24,19 +26,29 @@ const UserFoodItemsScreen = () => {
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const { getRestaurantById, getFoodItemsByRestaurant, loading } =
     useContext(FoodContext);
+  const {
+    setCurrentRestaurant,
+    addToCart,
+    getItemQuantity,
+    getCartCount,
+    hasCartItems,
+  } = useContext(CartContext);
+
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { cartItems, addToCart } = useContext(CartContext);
-
   const restaurantId = params.restaurantId;
-  const userId = params.userId;
+  const restaurantName = params.restaurantName;
 
   const fetchFoodItems = async () => {
     try {
       // Get restaurant info using context
       const restaurantResult = await getRestaurantById(restaurantId);
       if (restaurantResult.success) {
-        setRestaurantInfo(restaurantResult.data);
+        const restInfo = restaurantResult.data;
+        setRestaurantInfo(restInfo);
+
+        // Set as current restaurant for cart
+        setCurrentRestaurant(restaurantId, restInfo);
       }
 
       // Get food items for this restaurant using context
@@ -44,40 +56,32 @@ const UserFoodItemsScreen = () => {
       if (foodResult.success) {
         const updatedItems = foodResult.data.map((item) => ({
           ...item,
-          price: parseFloat(item.price),
-          quantity: 0,
+          price: parseFloat(item.price) || 0,
         }));
         setFoodItems(updatedItems);
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: foodResult.error,
-        });
       }
     } catch (error) {
-      console.error("Error fetching food items:", error.message);
+      console.error("Error fetching data:", error);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to fetch menu items. Please try again.",
+        text2: "Failed to load menu items",
       });
     }
   };
 
   useEffect(() => {
-    fetchFoodItems();
+    if (restaurantId) {
+      fetchFoodItems();
+    }
   }, [restaurantId]);
 
   useFocusEffect(
     useCallback(() => {
-      setFoodItems((prevItems) =>
-        prevItems.map((item) => {
-          const cartItem = cartItems.find((ci) => ci.id === item._id);
-          return { ...item, quantity: cartItem ? cartItem.quantity : 0 };
-        })
-      );
-    }, [cartItems])
+      if (restaurantId) {
+        fetchFoodItems();
+      }
+    }, [restaurantId])
   );
 
   const onRefresh = async () => {
@@ -87,66 +91,213 @@ const UserFoodItemsScreen = () => {
   };
 
   const handleAddToCart = (item) => {
-    addToCart({
-      id: item._id,
-      name: item.food_name,
-      price: item.price,
-      image: item.food_image,
-      restaurantId: restaurantId,
-    });
+    // Add item to cart (supports independent restaurant carts)
+    const currentQuantity = getItemQuantity(item._id, restaurantId);
+    const result = addToCart(
+      {
+        ...item,
+        quantity: currentQuantity + 1,
+        restaurant: restaurantInfo,
+      },
+      restaurantId
+    );
 
-    Toast.show({
-      type: "success",
-      text1: "Added to Cart",
-      text2: `${item.food_name} has been added to your cart`,
-    });
+    if (result.success) {
+      // Toast.show({
+      //   type: "success",
+      //   text1: "Added to Cart",
+      //   text2: `${item.name} added to your cart`,
+      // });
+      console.log("come ra hacker ga--");
+    } else if (result.error) {
+      Toast.show({
+        type: "error",
+        text1: "Cannot Add Item",
+        text2: result.error,
+      });
+    }
+  };
+
+  const handleQuantityChange = (item, change) => {
+    const currentQuantity = getItemQuantity(item._id, restaurantId);
+    const newQuantity = Math.max(0, currentQuantity + change);
+
+    const result = addToCart(
+      {
+        ...item,
+        quantity: newQuantity,
+        restaurant: restaurantInfo,
+      },
+      restaurantId
+    );
+
+    if (!result.success && result.error) {
+      Toast.show({
+        type: "error",
+        text1: "Cannot Update Item",
+        text2: result.error,
+      });
+    }
+  };
+
+  const navigateToCart = () => {
+    if (hasCartItems(restaurantId)) {
+      router.push({
+        pathname: "/UserCartScreen",
+        params: { restaurantId },
+      });
+    }
   };
 
   const renderFoodItem = ({ item }) => {
-    const cartQuantity =
-      cartItems.find((ci) => ci.id === item._id)?.quantity || 0;
+    const quantity = getItemQuantity(item._id, restaurantId);
+    const isVeg = item.category?.toLowerCase().includes("veg") || item.isVeg;
 
     return (
-      <View style={styles.foodCard}>
-        <Image
-          source={{ uri: item.food_image || "https://via.placeholder.com/150" }}
-          style={styles.foodImage}
-        />
-        <View style={styles.foodInfo}>
-          <Text style={styles.foodName} numberOfLines={2}>
-            {item.food_name}
-          </Text>
-          <Text style={styles.foodDescription} numberOfLines={2}>
-            {item.food_description || "Delicious food item"}
-          </Text>
-          <View style={styles.foodMeta}>
-            <View style={styles.priceContainer}>
-              <Text style={styles.priceLabel}>Price</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
+      <View className="bg-white rounded-2xl mx-4 mb-4 overflow-hidden shadow-sm border border-gray-100">
+        <View className="p-5">
+          {/* Header Row */}
+          <View className="flex-row justify-between items-start mb-3">
+            <View className="flex-1 mr-4">
+              <View className="flex-row items-center mb-2">
+                <View
+                  className={`w-4 h-4 rounded-sm mr-2 border-2 ${
+                    isVeg
+                      ? "bg-green-500 border-green-500"
+                      : "bg-red-500 border-red-500"
+                  }`}
+                >
+                  <View
+                    className={`w-2 h-2 rounded-full m-auto ${
+                      isVeg ? "bg-green-600" : "bg-red-600"
+                    }`}
+                  />
+                </View>
+                <Text
+                  className="text-lg font-bold text-gray-900"
+                  style={{ fontFamily: "Poppins-Bold" }}
+                  numberOfLines={2}
+                >
+                  {item.name}
+                </Text>
+              </View>
+
+              {item.description && (
+                <Text
+                  className="text-gray-600 text-sm mb-3 leading-5"
+                  style={{ fontFamily: "Poppins-Regular" }}
+                  numberOfLines={2}
+                >
+                  {item.description}
+                </Text>
+              )}
+
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="text-2xl font-bold text-orange-600"
+                  style={{ fontFamily: "Poppins-Bold" }}
+                >
+                  ₹{item.price}
+                </Text>
+
+                {item.category && (
+                  <View className="bg-gray-100 rounded-full px-3 py-1">
+                    <Text
+                      className="text-gray-700 text-xs font-medium"
+                      style={{ fontFamily: "Poppins-Medium" }}
+                    >
+                      {item.category}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
-            <View style={styles.ratingContainer}>
-              <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-              <Text style={styles.ratingText}>4.2</Text>
+
+            {/* Availability Badge */}
+            <View
+              className={`rounded-full px-3 py-1 ${
+                item.available ? "bg-green-100" : "bg-red-100"
+              }`}
+            >
+              <Text
+                className={`text-xs font-medium ${
+                  item.available ? "text-green-800" : "text-red-800"
+                }`}
+                style={{ fontFamily: "Poppins-Medium" }}
+              >
+                {item.available ? "Available" : "Out of Stock"}
+              </Text>
             </View>
           </View>
-          <View style={styles.actionContainer}>
-            <View style={styles.quantityContainer}>
-              {cartQuantity > 0 && (
-                <View style={styles.quantityBadge}>
-                  <Text style={styles.quantityText}>
-                    {cartQuantity} in cart
+
+          {/* Add to Cart / Quantity Controls */}
+          {item.available && (
+            <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              {quantity === 0 ? (
+                <TouchableOpacity
+                  onPress={() => handleAddToCart(item)}
+                  className="flex-1 bg-orange-500 rounded-xl py-3 px-4 flex-row items-center justify-center"
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="plus" size={18} color="white" />
+                  <Text
+                    className="text-white font-bold ml-2"
+                    style={{ fontFamily: "Poppins-Bold" }}
+                  >
+                    Add to Cart
                   </Text>
+                </TouchableOpacity>
+              ) : (
+                <View className="flex-row items-center justify-between flex-1">
+                  <TouchableOpacity
+                    onPress={() => handleQuantityChange(item, -1)}
+                    className="bg-orange-100 rounded-full p-2"
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name="minus"
+                      size={18}
+                      color="#F97316"
+                    />
+                  </TouchableOpacity>
+
+                  <View className="bg-orange-50 rounded-xl px-4 py-2 min-w-[80px] items-center">
+                    <Text
+                      className="text-orange-600 font-bold text-lg"
+                      style={{ fontFamily: "Poppins-Bold" }}
+                    >
+                      {quantity}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => handleQuantityChange(item, 1)}
+                    className="bg-orange-500 rounded-full p-2"
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={18}
+                      color="white"
+                    />
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => handleAddToCart(item)}
-            >
-              <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
-          </View>
+          )}
+
+          {!item.available && (
+            <View className="mt-4 pt-4 border-t border-gray-100">
+              <View className="bg-gray-100 rounded-xl py-3 px-4 items-center">
+                <Text
+                  className="text-gray-500 font-medium"
+                  style={{ fontFamily: "Poppins-Medium" }}
+                >
+                  Currently Unavailable
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -154,114 +305,156 @@ const UserFoodItemsScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={styles.loadingContent}>
-          <View style={styles.loadingIcon}>
-            <MaterialCommunityIcons
-              name="silverware-fork-knife"
-              size={48}
-              color="#FF6B00"
-            />
-          </View>
-          <ActivityIndicator size="large" color="#FF6B00" />
-          <Text style={styles.loadingText}>Loading menu...</Text>
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#F97316" />
+          <Text
+            className="mt-4 text-gray-600"
+            style={{ fontFamily: "Poppins-Medium" }}
+          >
+            Loading menu...
+          </Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
-        </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Menu</Text>
-          {restaurantInfo && (
-            <Text style={styles.headerSubtitle}>
-              {restaurantInfo.restaurant_name}
-            </Text>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => router.push("/UserCartScreen")}
-        >
-          <MaterialCommunityIcons name="cart" size={24} color="#FF6B00" />
-          {cartItems.length > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>
-                {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+      <View className="bg-white shadow-sm border-b border-gray-100">
+        <View className="flex-row items-center justify-between px-6 py-4">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="bg-gray-100 rounded-full p-2"
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="#374151"
+            />
+          </TouchableOpacity>
 
-      {/* Restaurant Info Card */}
-      {restaurantInfo && (
-        <View style={styles.restaurantCard}>
-          <Image
-            source={{
-              uri:
-                restaurantInfo.restaurant_image ||
-                "https://via.placeholder.com/400x200",
-            }}
-            style={styles.restaurantImage}
-          />
-          <View style={styles.restaurantOverlay}>
-            <Text style={styles.restaurantName}>
-              {restaurantInfo.restaurant_name}
+          <View className="flex-1 mx-4">
+            <Text
+              className="text-xl font-bold text-gray-900 text-center"
+              style={{ fontFamily: "Poppins-Bold" }}
+              numberOfLines={1}
+            >
+              {restaurantInfo?.name || restaurantName || "Menu"}
             </Text>
-            <View style={styles.restaurantMeta}>
-              <View style={styles.restaurantRating}>
-                <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-                <Text style={styles.restaurantRatingText}>4.5</Text>
-              </View>
-              <View style={styles.restaurantLocation}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={16}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.restaurantLocationText}>
-                  {restaurantInfo.restaurant_location}
+            {restaurantInfo?.location && (
+              <Text
+                className="text-gray-500 text-sm text-center mt-1"
+                style={{ fontFamily: "Poppins-Regular" }}
+                numberOfLines={1}
+              >
+                {restaurantInfo.location}
+              </Text>
+            )}
+          </View>
+
+          {/* Cart Icon */}
+          <TouchableOpacity
+            onPress={navigateToCart}
+            className="bg-orange-500 rounded-full p-2 relative"
+            activeOpacity={0.8}
+            disabled={!hasCartItems(restaurantId)}
+          >
+            <MaterialCommunityIcons
+              name="cart"
+              size={24}
+              color={
+                hasCartItems(restaurantId) ? "white" : "rgba(255,255,255,0.5)"
+              }
+            />
+            {hasCartItems(restaurantId) && (
+              <View className="absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[20px] h-5 items-center justify-center">
+                <Text
+                  className="text-white text-xs font-bold"
+                  style={{ fontFamily: "Poppins-Bold" }}
+                >
+                  {getCartCount(restaurantId)}
                 </Text>
               </View>
-            </View>
-          </View>
+            )}
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
 
-      {/* Food Items List */}
+      {/* Menu Items */}
       <FlatList
         data={foodItems}
         renderItem={renderFoodItem}
         keyExtractor={(item) => item._id}
+        contentContainerStyle={{ paddingVertical: 20 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#FF6B00"]}
-            tintColor="#FF6B00"
+            colors={["#F97316"]}
+            tintColor="#F97316"
           />
         }
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
+          <View className="flex-1 justify-center items-center px-6 py-20">
+            <MaterialCommunityIcons name="food-off" size={64} color="#9CA3AF" />
+            <Text
+              className="text-xl font-bold text-gray-900 mt-4 text-center"
+              style={{ fontFamily: "Poppins-Bold" }}
+            >
+              No Menu Items
+            </Text>
+            <Text
+              className="text-gray-500 mt-2 text-center leading-6"
+              style={{ fontFamily: "Poppins-Regular" }}
+            >
+              This restaurant hasn't added any menu items yet.
+            </Text>
+          </View>
+        )}
       />
 
-      {/* Bottom Navigation */}
-      <BottomNavigation userRole="user" />
-      <Toast />
+      {/* Floating Cart Button (when has items) */}
+      {hasCartItems(restaurantId) && (
+        <View className="absolute bottom-6 left-6 right-6">
+          <TouchableOpacity
+            onPress={navigateToCart}
+            className="bg-orange-500 rounded-2xl py-4 px-6 flex-row items-center justify-between shadow-lg"
+            activeOpacity={0.9}
+          >
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons name="cart" size={24} color="white" />
+              <Text
+                className="text-white font-bold text-lg ml-3"
+                style={{ fontFamily: "Poppins-Bold" }}
+              >
+                View Cart
+              </Text>
+            </View>
+            <View className="flex-row items-center">
+              <Text
+                className="text-white font-bold text-lg mr-2"
+                style={{ fontFamily: "Poppins-Bold" }}
+              >
+                {getCartCount(restaurantId)} items
+              </Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={20}
+                color="white"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
+
 export default UserFoodItemsScreen;

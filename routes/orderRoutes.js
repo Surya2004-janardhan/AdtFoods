@@ -9,8 +9,11 @@ const validateRequest =
 const createOrderSchema = {
   userId: { type: "string", required: true },
   name: { type: "string", required: true },
+  restaurant: { type: "string", required: true },
   items: { type: "array", required: true },
-  total: { type: "number", required: true },
+  totalAmount: { type: "number", required: true },
+  deliveryFee: { type: "number" },
+  tax: { type: "number" },
   paymentMethod: { type: "string", required: true },
   note: { type: "string" },
 };

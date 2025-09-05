@@ -6,19 +6,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BottomNavigation = ({ userRole = "user" }) => {
   const router = useRouter();
-  const pathname = usePathname();
-
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.multiRemove(["userToken", "userId", "userRole"]);
-      router.replace("/AuthScreen");
-    } catch (error) {
-      console.error("Error during logout:", error);
-    }
-  };
+  const pathname = usePathname() || "/";
 
   const handleNavigation = (route) => {
-    router.push(route);
+    try {
+      console.log("Navigating to:", route);
+      router.push(route);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // Fallback navigation attempt
+      try {
+        router.replace(route);
+      } catch (fallbackError) {
+        console.error("Fallback navigation failed:", fallbackError);
+      }
+    }
   };
 
   // Define navigation items based on user role
@@ -43,13 +45,6 @@ const BottomNavigation = ({ userRole = "user" }) => {
           route: "/AccountScreen",
           key: "account",
         },
-        {
-          name: "Logout",
-          icon: "logout",
-          route: null,
-          key: "logout",
-          action: handleLogout,
-        },
       ];
     } else {
       return [
@@ -60,10 +55,10 @@ const BottomNavigation = ({ userRole = "user" }) => {
           key: "home",
         },
         {
-          name: "Cart",
-          icon: "cart",
-          route: "/UserCartScreen",
-          key: "cart",
+          name: "Notifications",
+          icon: "bell",
+          route: "/NotificationsScreen",
+          key: "notifications",
         },
         {
           name: "Orders",
@@ -77,13 +72,6 @@ const BottomNavigation = ({ userRole = "user" }) => {
           route: "/AccountScreen",
           key: "account",
         },
-        {
-          name: "Logout",
-          icon: "logout",
-          route: null,
-          key: "logout",
-          action: handleLogout,
-        },
       ];
     }
   };
@@ -91,7 +79,12 @@ const BottomNavigation = ({ userRole = "user" }) => {
   const navigationItems = getNavigationItems();
 
   const isActiveRoute = (route) => {
-    return pathname === route;
+    // Handle both /ScreenName and ScreenName patterns
+    const normalizedPathname = pathname.startsWith("/")
+      ? pathname
+      : `/${pathname}`;
+    const normalizedRoute = route.startsWith("/") ? route : `/${route}`;
+    return normalizedPathname === normalizedRoute;
   };
 
   return (
@@ -168,6 +161,7 @@ const styles = StyleSheet.create({
   },
   activeNavItem: {
     // Active item styling handled in iconContainer
+    borderRadius: 20,
   },
   iconContainer: {
     width: 40,

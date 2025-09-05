@@ -35,7 +35,7 @@ const InputField = ({
   return (
     <View className="mb-3">
       <Text
-        className="text-xs text-gray-600 mb-1.5"
+        className="text-sm text-gray-600 mb-1.5"
         style={{ fontFamily: "Poppins-Medium" }}
       >
         {label}
@@ -48,8 +48,8 @@ const InputField = ({
           style={{ marginRight: 8 }}
         />
         <TextInput
-          className="flex-1 text-sm text-gray-800"
-          style={{ fontFamily: "Poppins-Regular", minHeight: 18 }}
+          className="flex-1 text-base text-gray-800"
+          style={{ fontFamily: "Poppins-Regular", minHeight: 20 }}
           value={value}
           onChangeText={setValue}
           keyboardType={keyboardType}
@@ -226,13 +226,13 @@ const AuthScreen = () => {
               />
             </View>
             <Text
-              className="text-2xl text-gray-900 text-center mb-1"
-              style={{ fontFamily: "PlayfairDisplay-Bold" }}
+              className="text-3xl text-gray-900 text-center mb-1"
+              style={{ fontFamily: "Poppins-Bold" }}
             >
               ADITYA FOODS
             </Text>
             <Text
-              className="text-sm text-gray-600 text-center"
+              className="text-base text-gray-600 text-center"
               style={{ fontFamily: "Poppins-Regular" }}
             >
               Delicious meals at your fingertips
@@ -243,13 +243,13 @@ const AuthScreen = () => {
           <View className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
             <View className="mb-4">
               <Text
-                className="text-lg text-gray-900 text-center mb-1"
-                style={{ fontFamily: "Poppins-SemiBold" }}
+                className="text-xl text-gray-900 text-center mb-1"
+                style={{ fontFamily: "Poppins-Bold" }}
               >
                 {isLogin ? "Welcome Back" : "Create Account"}
               </Text>
               <Text
-                className="text-sm text-gray-500 text-center"
+                className="text-base text-gray-500 text-center"
                 style={{ fontFamily: "Poppins-Regular" }}
               >
                 {isLogin ? "Sign in to continue" : "Join us today"}
@@ -264,6 +264,7 @@ const AuthScreen = () => {
                   setValue={setName}
                   icon="account"
                   placeholder="Enter Name"
+                  // className="bg-amber-900"
                 />
                 <InputField
                   label="Email Address"
@@ -310,8 +311,8 @@ const AuthScreen = () => {
               activeOpacity={0.8}
             >
               <Text
-                className="text-white text-base"
-                style={{ fontFamily: "Poppins-SemiBold" }}
+                className="text-white text-lg"
+                style={{ fontFamily: "Poppins-Bold" }}
               >
                 {loading
                   ? "Please wait..."
@@ -327,7 +328,7 @@ const AuthScreen = () => {
               activeOpacity={0.7}
             >
               <Text
-                className="text-orange-600 text-sm"
+                className="text-orange-600 text-base"
                 style={{ fontFamily: "Poppins-Medium" }}
               >
                 {isLogin

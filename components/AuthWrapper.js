@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useRouter, useSegments } from "expo-router";
 import AuthContext from "../context/AuthContext";
@@ -8,25 +8,11 @@ const AuthWrapper = ({ children }) => {
   const router = useRouter();
   const segments = useSegments();
 
-  // Show loading screen while checking authentication
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text
-          className="mt-4 text-gray-600"
-          style={{ fontFamily: "Poppins-Regular" }}
-        >
-          Loading...
-        </Text>
-      </View>
-    );
-  }
-
   // Check if we're on an auth screen
   const isAuthScreen = segments[0] === "AuthScreen" || segments.length === 0;
 
-  React.useEffect(() => {
+  // Handle navigation logic - this hook must be called every render
+  useEffect(() => {
     if (!loading) {
       if (user && isAuthScreen) {
         // User is logged in but on auth screen, redirect based on role
@@ -41,9 +27,26 @@ const AuthWrapper = ({ children }) => {
         router.replace("/AuthScreen");
       }
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, isAuthScreen, router]);
+
+  // Show loading screen while checking authentication - after all hooks
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-50">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text
+          className="mt-4 text-gray-600"
+          style={{ fontFamily: "Poppins-Regular" }}
+        >
+          Loading...
+        </Text>
+      </View>
+    );
+  }
 
   return <>{children}</>;
 };
 
 export default AuthWrapper;
+
+// export default AuthWrapper;

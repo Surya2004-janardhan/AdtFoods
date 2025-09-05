@@ -13,8 +13,10 @@ export const FoodProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.get("/restaurants");
-      setRestaurants(response.data);
-      return { success: true, data: response.data };
+      // Handle both old format (array) and new format (object with data array)
+      const restaurantData = response.data.data || response.data;
+      setRestaurants(restaurantData);
+      return { success: true, data: restaurantData };
     } catch (error) {
       console.error("Error fetching restaurants:", error);
       return {
@@ -31,8 +33,10 @@ export const FoodProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.get("/food-items");
-      setFoodItems(response.data);
-      return { success: true, data: response.data };
+      // Handle both old format (array) and new format (object with data array)
+      const foodData = response.data.data || response.data;
+      setFoodItems(foodData);
+      return { success: true, data: foodData };
     } catch (error) {
       console.error("Error fetching food items:", error);
       return {
@@ -47,12 +51,10 @@ export const FoodProvider = ({ children }) => {
   // Get food items by restaurant ID
   const getFoodItemsByRestaurant = async (restaurantId) => {
     try {
-      const response = await axios.get("/food-items");
-      const restaurantItems = response.data.filter(
-        (item) =>
-          item.restaurant_id === parseInt(restaurantId) && item.available
-      );
-      return { success: true, data: restaurantItems };
+      const response = await axios.get(`/restaurants/${restaurantId}/menu`);
+      // Handle both old format (array) and new format (object with data array)
+      const foodData = response.data.data || response.data;
+      return { success: true, data: foodData };
     } catch (error) {
       console.error("Error fetching restaurant food items:", error);
       return {
@@ -65,25 +67,9 @@ export const FoodProvider = ({ children }) => {
   // Get restaurant by ID
   const getRestaurantById = async (restaurantId) => {
     try {
-      if (restaurants.length === 0) {
-        await fetchRestaurants();
-      }
-      const restaurant = restaurants.find(
-        (r) => r.id === parseInt(restaurantId)
-      );
-      if (restaurant) {
-        return { success: true, data: restaurant };
-      } else {
-        // Fallback: fetch all restaurants and find the one
-        const response = await axios.get("/restaurants");
-        const foundRestaurant = response.data.find(
-          (r) => r.id === parseInt(restaurantId)
-        );
-        if (foundRestaurant) {
-          return { success: true, data: foundRestaurant };
-        }
-        return { success: false, error: "Restaurant not found" };
-      }
+      const response = await axios.get(`/restaurants/${restaurantId}`);
+      const restaurantData = response.data.data || response.data;
+      return { success: true, data: restaurantData };
     } catch (error) {
       console.error("Error fetching restaurant:", error);
       return {
@@ -102,7 +88,7 @@ export const FoodProvider = ({ children }) => {
         // Update the item in local state
         setFoodItems((prevItems) =>
           prevItems.map((item) =>
-            item.id === itemId ? { ...item, available } : item
+            item._id === itemId ? { ...item, available } : item
           )
         );
         return { success: true };
