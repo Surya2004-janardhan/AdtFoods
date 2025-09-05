@@ -26,8 +26,14 @@ import Toast from "react-native-toast-message";
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
-  const { restaurants, loading, fetchRestaurants, getFoodItemsByRestaurant } =
-    useContext(FoodContext);
+  const {
+    restaurants,
+    loading,
+    fetchRestaurants,
+    getFoodItemsByRestaurant,
+    clearRestaurantCache,
+    CACHE_DURATION,
+  } = useContext(FoodContext);
   const { user } = useContext(AuthContext);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -36,6 +42,7 @@ const HomeScreen = () => {
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [restaurantMenus, setRestaurantMenus] = useState({});
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [cacheStatus, setCacheStatus] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -44,17 +51,27 @@ const HomeScreen = () => {
         const role = (await AsyncStorage.getItem("userRole")) || "user";
         setUserRole(role);
 
-        // Fetch restaurants using context
-        const result = await fetchRestaurants();
+        // Fetch restaurants using context with cache (no force refresh on initial load)
+        const result = await fetchRestaurants(false);
 
         if (!result.success && result.error) {
           setError(result.error);
+          setCacheStatus("Error loading data");
           Toast.show({
             type: "error",
             text1: "Error",
             text2: result.error,
           });
         } else if (result.success) {
+          // Show cache status for user feedback
+          if (result.fromCache) {
+            setCacheStatus("Loaded from cache");
+            console.log("Loaded restaurants from cache");
+          } else {
+            setCacheStatus("Fetched from server");
+            console.log("Fetched restaurants from server");
+          }
+
           // Fetch menu items for each restaurant
           await fetchMenusForRestaurants(result.data || restaurants);
         }
@@ -124,8 +141,18 @@ const HomeScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const result = await fetchRestaurants();
-      if (!result.success && result.error) {
+      // Force refresh from server on manual refresh
+      const result = await fetchRestaurants(true);
+      if (result.success) {
+        setCacheStatus("Refreshed from server");
+        await fetchMenusForRestaurants(result.data || restaurants);
+        Toast.show({
+          type: "success",
+          text1: "Refreshed",
+          text2: "Restaurant data updated successfully",
+        });
+      } else if (result.error) {
+        setCacheStatus("Refresh failed");
         Toast.show({
           type: "error",
           text1: "Refresh Failed",
@@ -134,8 +161,35 @@ const HomeScreen = () => {
       }
     } catch (err) {
       console.error("Refresh error:", err);
+      setCacheStatus("Refresh failed");
+      Toast.show({
+        type: "error",
+        text1: "Refresh Failed",
+        text2: "Unable to refresh data",
+      });
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Clear cache function for development/troubleshooting
+  const handleClearCache = async () => {
+    try {
+      await clearRestaurantCache();
+      setCacheStatus("Cache cleared");
+      Toast.show({
+        type: "success",
+        text1: "Cache Cleared",
+        text2: "Restaurant cache has been cleared",
+      });
+      // Fetch fresh data
+      onRefresh();
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to clear cache",
+      });
     }
   };
 
@@ -400,6 +454,23 @@ const HomeScreen = () => {
                 >
                   {user?.name || "Foodie"}
                 </Text>
+                {/* Cache status indicator (for development) */}
+                {/* {cacheStatus && ( */}
+                {/* <Text */}
+                {/* className="text-xs mt-1" */}
+                {/* style={{ */}
+                {/* fontFamily: "Poppins-Regular", */}
+                {/* color: cacheStatus.includes("cache") */}
+                {/* ? "#10B981"/</View> */}
+                {/* : cacheStatus.includes("server") */}
+                {/* ? "#3B82F6" */}
+                {/* : "#6B7280", */}
+                {/* }} */}
+                {/* > */}
+                {/* {cacheStatus} • Cache expires in{" "} */}
+                {/* {Math.floor(CACHE_DURATION / (1000 * 60))} min */}
+                {/* </Text> */}
+                {/* )} */}
               </View>
             </View>
 
@@ -443,8 +514,10 @@ const HomeScreen = () => {
             </Text>
             <TouchableOpacity
               onPress={onRefresh}
+              onLongPress={handleClearCache}
               className="bg-orange-500 rounded-xl px-6 py-3 mt-6"
               activeOpacity={0.8}
+              delayLongPress={1000}
             >
               <Text
                 className="text-white font-bold"
