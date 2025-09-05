@@ -9,6 +9,8 @@ import {
   SafeAreaView,
   StyleSheet,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -177,21 +179,22 @@ const OrdersScreen = () => {
         </View>
 
         {/* Restaurant Info */}
-        <View className="mb-3">
-          <View className="flex-row items-center mb-2">
+        <View style={styles.restaurantInfo}>
+          <View style={styles.restaurantNameRow}>
             <MaterialCommunityIcons name="store" size={18} color="#666" />
             <Text
-              className="ml-2 text-gray-700 font-semibold"
-              style={{ fontFamily: "Poppins-Medium" }}
+              style={[styles.restaurantName, { fontFamily: "Poppins-Medium" }]}
             >
               {item.restaurantName || item.restaurant?.name || "Restaurant"}
             </Text>
           </View>
-          <View className="flex-row items-center">
+          <View style={styles.restaurantLocationRow}>
             <MaterialCommunityIcons name="map-marker" size={18} color="#666" />
             <Text
-              className="ml-2 text-gray-600"
-              style={{ fontFamily: "Poppins-Regular" }}
+              style={[
+                styles.restaurantLocation,
+                { fontFamily: "Poppins-Regular" },
+              ]}
             >
               {item.restaurantLocation ||
                 item.restaurant?.location ||
@@ -202,22 +205,15 @@ const OrdersScreen = () => {
 
         {/* OTP Display */}
         {item.otp && (
-          <View className="mb-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-            <Text
-              className="text-orange-700 text-sm font-medium mb-1"
-              style={{ fontFamily: "Poppins-Medium" }}
-            >
+          <View style={styles.otpContainer}>
+            <Text style={[styles.otpLabel, { fontFamily: "Poppins-Medium" }]}>
               Pickup OTP:
             </Text>
-            <Text
-              className="text-orange-900 text-xl font-bold"
-              style={{ fontFamily: "Poppins-Bold" }}
-            >
+            <Text style={[styles.otpCode, { fontFamily: "Poppins-Bold" }]}>
               {item.otp}
             </Text>
             <Text
-              className="text-orange-600 text-xs mt-1"
-              style={{ fontFamily: "Poppins-Regular" }}
+              style={[styles.otpDescription, { fontFamily: "Poppins-Regular" }]}
             >
               Show this OTP to the restaurant for order pickup
             </Text>
@@ -225,27 +221,19 @@ const OrdersScreen = () => {
         )}
 
         {/* Order Items */}
-        <View className="mb-4">
-          <Text
-            className="text-gray-600 mb-2 text-sm"
-            style={{ fontFamily: "Poppins-Medium" }}
-          >
+        <View style={styles.itemsContainer}>
+          <Text style={[styles.itemsHeader, { fontFamily: "Poppins-Medium" }]}>
             Items ({item.items?.length || 0}):
           </Text>
           {item.items?.map((orderItem, index) => (
-            <View
-              key={index}
-              className="flex-row justify-between items-center py-1"
-            >
+            <View key={index} style={styles.itemRow}>
               <Text
-                className="text-gray-800 flex-1"
-                style={{ fontFamily: "Poppins-Regular" }}
+                style={[styles.itemName, { fontFamily: "Poppins-Regular" }]}
               >
                 {orderItem.food?.name || "Food Item"} x {orderItem.quantity}
               </Text>
               <Text
-                className="text-gray-600 font-medium"
-                style={{ fontFamily: "Poppins-Medium" }}
+                style={[styles.itemPrice, { fontFamily: "Poppins-Medium" }]}
               >
                 ₹
                 {((orderItem.food?.price || 0) * orderItem.quantity).toFixed(2)}
@@ -255,31 +243,25 @@ const OrdersScreen = () => {
         </View>
 
         {/* Order Details */}
-        <View className="border-t border-gray-100 pt-3 mb-4">
-          <View className="flex-row justify-between items-center mb-2">
+        <View style={styles.orderDetails}>
+          <View style={styles.detailRow}>
             <Text
-              className="text-gray-600"
-              style={{ fontFamily: "Poppins-Regular" }}
+              style={[styles.detailLabel, { fontFamily: "Poppins-Regular" }]}
             >
               Total Amount:
             </Text>
-            <Text
-              className="text-lg font-bold text-green-600"
-              style={{ fontFamily: "Poppins-Bold" }}
-            >
+            <Text style={[styles.detailValue, { fontFamily: "Poppins-Bold" }]}>
               ₹{(item.totalAmount || 0).toFixed(2)}
             </Text>
           </View>
-          <View className="flex-row justify-between items-center">
+          <View style={styles.detailRow}>
             <Text
-              className="text-gray-600"
-              style={{ fontFamily: "Poppins-Regular" }}
+              style={[styles.detailLabel, { fontFamily: "Poppins-Regular" }]}
             >
               Order Date:
             </Text>
             <Text
-              className="text-gray-800"
-              style={{ fontFamily: "Poppins-Regular" }}
+              style={[styles.detailDate, { fontFamily: "Poppins-Regular" }]}
             >
               {item.createdAt
                 ? new Date(item.createdAt).toLocaleDateString()
@@ -292,30 +274,36 @@ const OrdersScreen = () => {
         {userRole === "staff" &&
           item.status !== "ready_to_pick" &&
           item.status !== "cancelled" && (
-            <View className="border-t border-gray-100 pt-3">
+            <View style={styles.staffControls}>
               <Text
-                className="text-gray-600 mb-2 text-sm"
-                style={{ fontFamily: "Poppins-Medium" }}
+                style={[
+                  styles.staffControlsLabel,
+                  { fontFamily: "Poppins-Medium" },
+                ]}
               >
                 Update Status:
               </Text>
-              <View className="flex-row flex-wrap">
+              <View style={styles.statusButtons}>
                 {["pending", "ready_to_pick", "cancelled"].map((status) => (
                   <TouchableOpacity
                     key={status}
                     onPress={() => handleUpdateOrderStatus(item._id, status)}
-                    className={`mr-2 mb-2 px-4 py-2 rounded-lg ${
+                    style={[
+                      styles.statusButton,
                       item.status === status
-                        ? "bg-blue-500"
-                        : "bg-gray-100 border border-gray-300"
-                    }`}
+                        ? styles.activeStatusButton
+                        : styles.inactiveStatusButton,
+                    ]}
                     disabled={item.status === status}
                   >
                     <Text
-                      className={`text-sm font-medium ${
-                        item.status === status ? "text-white" : "text-gray-700"
-                      }`}
-                      style={{ fontFamily: "Poppins-Medium" }}
+                      style={[
+                        styles.statusButtonText,
+                        { fontFamily: "Poppins-Medium" },
+                        item.status === status
+                          ? styles.activeStatusButtonText
+                          : styles.inactiveStatusButtonText,
+                      ]}
                     >
                       {getStatusText(status)}
                     </Text>
@@ -346,95 +334,100 @@ const OrdersScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
-      {/* Header */}
-      <View className="bg-white shadow-sm border-b border-gray-100">
-        <View className="px-6 py-4">
-          <Text
-            className="text-2xl font-bold text-gray-900"
-            style={{ fontFamily: "PlayfairDisplay-Bold" }}
-          >
-            {userRole === "staff" ? "All Orders" : "My Orders"}
-          </Text>
-          <Text
-            className="text-gray-600 mt-1"
-            style={{ fontFamily: "Poppins-Regular" }}
-          >
-            {filteredOrders.length}{" "}
-            {filteredOrders.length === 1 ? "order" : "orders"} found
-          </Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { fontFamily: "Poppins-Bold" }]}>
+              {userRole === "staff" ? "All Orders" : "My Orders"}
+            </Text>
+            <Text
+              style={[styles.headerSubtitle, { fontFamily: "Poppins-Regular" }]}
+            >
+              {filteredOrders.length}{" "}
+              {filteredOrders.length === 1 ? "order" : "orders"} found
+            </Text>
 
-          {/* Search Bar */}
-          <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 mt-4">
-            <MaterialCommunityIcons name="magnify" size={20} color="#9CA3AF" />
-            <TextInput
-              className="flex-1 ml-3 text-gray-700"
-              style={{ fontFamily: "Poppins-Regular" }}
-              placeholder="Search orders..."
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <MaterialCommunityIcons
+                name="magnify"
+                size={20}
+                color="#9CA3AF"
+              />
+              <TextInput
+                style={[styles.searchInput, { fontFamily: "Poppins-Regular" }]}
+                placeholder="Search orders..."
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <MaterialCommunityIcons
+                    name="close-circle"
+                    size={20}
+                    color="#9CA3AF"
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Orders List */}
+        {filteredOrders.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons
+              name={searchQuery ? "magnify" : "receipt"}
+              size={80}
+              color="#ccc"
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <MaterialCommunityIcons
-                  name="close-circle"
-                  size={20}
-                  color="#9CA3AF"
-                />
+            <Text
+              style={[styles.emptyTitle, { fontFamily: "Poppins-SemiBold" }]}
+            >
+              {searchQuery ? "No matching orders found" : "No orders found"}
+            </Text>
+            <Text
+              style={[styles.emptySubtitle, { fontFamily: "Poppins-Regular" }]}
+            >
+              {searchQuery
+                ? "Try adjusting your search terms"
+                : userRole === "staff"
+                ? "No orders have been placed yet."
+                : "You haven't placed any orders yet. Start by browsing restaurants!"}
+            </Text>
+            {!searchQuery && userRole !== "staff" && (
+              <TouchableOpacity
+                style={styles.browseButton}
+                onPress={() => router.push("/HomeScreen")}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.browseButtonText,
+                    { fontFamily: "Poppins-Bold" },
+                  ]}
+                >
+                  Browse Restaurants
+                </Text>
               </TouchableOpacity>
             )}
           </View>
-        </View>
-      </View>
-
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <View className="flex-1 justify-center items-center px-6">
-          <MaterialCommunityIcons
-            name={searchQuery ? "magnify" : "receipt"}
-            size={80}
-            color="#ccc"
+        ) : (
+          <FlatList
+            data={filteredOrders}
+            renderItem={renderOrderItem}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={{ paddingVertical: 16 }}
+            showsVerticalScrollIndicator={false}
           />
-          <Text
-            className="text-xl text-gray-500 mt-4 text-center"
-            style={{ fontFamily: "Poppins-SemiBold" }}
-          >
-            {searchQuery ? "No matching orders found" : "No orders found"}
-          </Text>
-          <Text
-            className="text-gray-400 mt-2 text-center"
-            style={{ fontFamily: "Poppins-Regular" }}
-          >
-            {searchQuery
-              ? "Try adjusting your search terms"
-              : userRole === "staff"
-              ? "No orders have been placed yet."
-              : "You haven't placed any orders yet. Start by browsing restaurants!"}
-          </Text>
-          {!searchQuery && userRole !== "staff" && (
-            <TouchableOpacity
-              className="bg-orange-500 rounded-xl px-6 py-3 mt-6"
-              onPress={() => router.push("/HomeScreen")}
-              activeOpacity={0.8}
-            >
-              <Text
-                className="text-white font-bold"
-                style={{ fontFamily: "Poppins-Bold" }}
-              >
-                Browse Restaurants
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <FlatList
-          data={filteredOrders}
-          renderItem={renderOrderItem}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={{ paddingVertical: 16 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        )}
+      </KeyboardAvoidingView>
 
       <BottomNavigation userRole={userRole} />
     </SafeAreaView>
@@ -445,6 +438,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -491,6 +487,208 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  restaurantInfo: {
+    marginBottom: 12,
+  },
+  restaurantNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  restaurantName: {
+    marginLeft: 8,
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  restaurantLocationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  restaurantLocation: {
+    marginLeft: 8,
+    color: "#6b7280",
+    fontSize: 14,
+  },
+  otpContainer: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: "#fef3c7",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+  },
+  otpLabel: {
+    color: "#b45309",
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  otpCode: {
+    color: "#92400e",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  otpDescription: {
+    color: "#d97706",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  itemsContainer: {
+    marginBottom: 16,
+  },
+  itemsHeader: {
+    color: "#6b7280",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  itemName: {
+    color: "#1f2937",
+    fontSize: 14,
+    flex: 1,
+  },
+  itemPrice: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  orderDetails: {
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+    paddingTop: 12,
+    marginBottom: 16,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  detailLabel: {
+    color: "#6b7280",
+    fontSize: 14,
+  },
+  detailValue: {
+    color: "#059669",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  detailDate: {
+    color: "#1f2937",
+    fontSize: 14,
+  },
+  staffControls: {
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+    paddingTop: 12,
+  },
+  staffControlsLabel: {
+    color: "#6b7280",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  statusButtons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  statusButton: {
+    marginRight: 8,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  activeStatusButton: {
+    backgroundColor: "#3b82f6",
+  },
+  inactiveStatusButton: {
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  statusButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  activeStatusButtonText: {
+    color: "#ffffff",
+  },
+  inactiveStatusButtonText: {
+    color: "#374151",
+  },
+  header: {
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  headerContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  headerSubtitle: {
+    color: "#6b7280",
+    marginTop: 4,
+    fontSize: 14,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    color: "#374151",
+    fontSize: 14,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    color: "#6b7280",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    color: "#9ca3af",
+    marginTop: 8,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  browseButton: {
+    backgroundColor: "#f97316",
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    marginTop: 24,
+  },
+  browseButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });
 
