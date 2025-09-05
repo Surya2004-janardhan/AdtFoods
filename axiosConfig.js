@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const instance = axios.create({
-  baseURL: "https://adtfoods.onrender.com/", // Set your base URL here 10.234.34.53
+  baseURL: "https://adtfoods.onrender.com", // Removed trailing slash
 });
 
 // Add a request interceptor to add the JWT token to all requests
