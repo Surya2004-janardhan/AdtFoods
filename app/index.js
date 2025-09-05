@@ -140,8 +140,8 @@ export default function IndexScreen() {
           style={{
             width: 48,
             height: 48,
-            borderRadius: 24,
-            borderWidth: 3,
+            // borderRadius: 24,
+            // borderWidth: 3,
             borderColor: "#FF6B00",
             alignItems: "center",
             justifyContent: "center",

@@ -169,11 +169,12 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 50, // Use larger value for perfect rounding
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
     marginBottom: 4,
+    overflow: "hidden",
   },
   activeIconContainer: {
     backgroundColor: "#FF6B00",
@@ -185,7 +186,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
-    borderRadius: 20,
+    borderRadius: 50, // Use a larger value to ensure perfect rounding
+    overflow: "hidden", // Prevents any content from breaking the border
   },
   navText: {
     fontSize: 12,
