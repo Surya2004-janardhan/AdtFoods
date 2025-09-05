@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AuthContext from "../context/AuthContext";
 import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
@@ -20,6 +21,7 @@ const AccountScreen = () => {
   const [userProfile, setUserProfile] = useState({});
   const [userRole, setUserRole] = useState("user");
   const [loading, setLoading] = useState(true);
+  const { user, logout } = useContext(AuthContext);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,18 +71,19 @@ const AccountScreen = () => {
         style: "destructive",
         onPress: async () => {
           try {
-            await AsyncStorage.multiRemove([
-              "userToken",
-              "userId",
-              "userRole",
-              "userProfile",
-            ]);
-            router.replace("/AuthScreen");
-            Toast.show({
-              type: "success",
-              text1: "Logged Out",
-              text2: "You have been successfully logged out",
-            });
+            console.log("Logging out user...");
+            const result = await logout();
+
+            if (result.success) {
+              Toast.show({
+                type: "success",
+                text1: "Logged Out",
+                text2: "You have been successfully logged out",
+              });
+              router.replace("/AuthScreen");
+            } else {
+              throw new Error(result.error);
+            }
           } catch (error) {
             console.error("Logout error:", error);
             Toast.show({

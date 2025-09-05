@@ -22,12 +22,13 @@ const signupSchema = {
 // Save token validation schema
 const saveTokenSchema = {
   userId: { type: "string", required: true },
-  token: { type: "string", required: true }, 
+  token: { type: "string", required: true },
 };
 
 // Auth routes
 router.post("/login", authController.login);
 router.post("/signup", authController.signup);
+router.get("/verify", authController.verifyToken); // New route for token verification
 router.get("/get-token", authController.getToken);
 router.post(
   "/save-token",

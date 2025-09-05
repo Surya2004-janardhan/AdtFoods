@@ -107,22 +107,9 @@ const signup = async (req, res) => {
       phone_number,
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        id: newUser._id,
-        user_id: newUser.user_id,
-        name: newUser.name,
-        email: newUser.email,
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRATION }
-    );
-
     res.status(201).json({
       success: true,
-      message: "Registration successful",
-      token,
+      message: "Registration successful. Please login to continue.",
     });
   } catch (err) {
     console.error("Signup error:", err);
@@ -204,9 +191,45 @@ const saveToken = async (req, res) => {
   }
 };
 
+// Verify token and get user data
+const verifyToken = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // Verify JWT token
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Get user data from database
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    // Return user info
+    res.json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        user_id: user.user_id,
+        phone_number: user.phone_number,
+      },
+      isStaff: user.user_id === "1",
+    });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
 module.exports = {
   login,
   signup,
   getToken,
   saveToken,
+  verifyToken,
 };

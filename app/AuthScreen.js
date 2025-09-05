@@ -164,16 +164,22 @@ const AuthScreen = () => {
       const result = await authContext.signup(userData);
 
       if (result.success) {
-        await AsyncStorage.setItem("userId", userId);
-        await AsyncStorage.setItem("userRole", "user");
-
-        router.replace("/HomeScreen");
+        // Don't navigate or store auth data since no token is created
+        // Switch to login mode and show success message
+        setIsLogin(true);
 
         Toast.show({
           type: "success",
           text1: "Registration Successful",
-          text2: "Welcome to Aditya Foods!",
+          text2: result.message || "Please login to continue",
         });
+
+        // Clear signup form but keep userId for login
+        setName("");
+        setEmail("");
+        setPhoneNumber("");
+        setPassword("");
+        // Keep userId filled for convenience
       } else {
         Toast.show({
           type: "error",

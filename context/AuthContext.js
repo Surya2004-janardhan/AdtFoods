@@ -20,16 +20,50 @@ export const AuthProvider = ({ children }) => {
         ]);
 
         if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
-          setToken(storedToken);
+          console.log("Found stored auth data, verifying token...");
 
-          // Set the token in axios headers for all future requests
+          // Set the token in axios headers for verification
           axios.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${storedToken}`;
+
+          // Verify token with backend
+          try {
+            const response = await axios.get("/verify");
+
+            if (response.data.success) {
+              console.log("Token verified successfully");
+              // Update user data from backend response
+              setUser(response.data.user);
+              setToken(storedToken);
+
+              // Store updated user data
+              await AsyncStorage.setItem(
+                "userProfile",
+                JSON.stringify(response.data.user)
+              );
+              await AsyncStorage.setItem(
+                "userRole",
+                response.data.isStaff ? "staff" : "user"
+              );
+              await AsyncStorage.setItem("userId", response.data.user.user_id);
+            } else {
+              console.log("Token verification failed, clearing auth data");
+              await clearAuthData();
+            }
+          } catch (error) {
+            console.log(
+              "Token verification failed:",
+              error.response?.data || error.message
+            );
+            await clearAuthData();
+          }
+        } else {
+          console.log("No stored auth data found");
         }
       } catch (error) {
         console.error("Error loading authentication state:", error);
+        await clearAuthData();
       } finally {
         setLoading(false);
       }
@@ -38,13 +72,44 @@ export const AuthProvider = ({ children }) => {
     loadAuthState();
   }, []);
 
+  // Helper function to clear auth data
+  const clearAuthData = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        "userProfile",
+        "authToken",
+        "userId",
+        "userRole",
+      ]);
+      setUser(null);
+      setToken(null);
+      delete axios.defaults.headers.common["Authorization"];
+    } catch (error) {
+      console.error("Error clearing auth data:", error);
+    }
+  };
+
   // Login function
   const login = async (userId, password) => {
     try {
-      const response = await axios.post("/auth/login", {
+      console.log("AuthContext login called with:", {
+        userId,
+        password: "***",
+      });
+
+      const loginData = {
         user_id: userId.toString(),
         password: password.toString(),
+      };
+
+      console.log("Sending login request with data:", {
+        ...loginData,
+        password: "***",
       });
+
+      const response = await axios.post("/login", loginData);
+
+      console.log("Login response received:", response.data);
 
       if (response.data.success && response.data.token) {
         const userData = response.data.user;
@@ -53,6 +118,11 @@ export const AuthProvider = ({ children }) => {
         // Store user data and token
         await AsyncStorage.setItem("userProfile", JSON.stringify(userData));
         await AsyncStorage.setItem("authToken", authToken);
+        await AsyncStorage.setItem("userId", userData.user_id);
+        await AsyncStorage.setItem(
+          "userRole",
+          userData.user_id === "1" ? "staff" : "user"
+        );
 
         // Update state
         setUser(userData);
@@ -61,14 +131,19 @@ export const AuthProvider = ({ children }) => {
         // Set authorization header for future requests
         axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
 
+        console.log("Login successful, user data stored");
         return {
           success: true,
-          isStaff: userId === "1", // Assuming user ID 1 is staff
+          isStaff: userData.user_id === "1",
+          user: userData,
         };
       }
+      console.log("Login failed: Invalid credentials or missing token");
       return { success: false, error: "Invalid credentials" };
     } catch (error) {
       console.error("Login error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       return {
         success: false,
         error:
@@ -80,23 +155,29 @@ export const AuthProvider = ({ children }) => {
   // Sign up function
   const signup = async (userData) => {
     try {
-      const response = await axios.post("/auth/signup", userData);
-      console.log(response);
+      console.log("AuthContext signup called with:", {
+        ...userData,
+        password: "***",
+      });
+
+      const response = await axios.post("/signup", userData);
+      console.log("Signup response received:", response.data);
+
       if (response.data.success) {
-        const authToken = response.data.token;
-
-        // Store token (user data will be stored at login)
-        await AsyncStorage.setItem("authToken", authToken);
-        setToken(authToken);
-
-        // Set authorization header
-        axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
-
-        return { success: true };
+        // No token is returned during signup, user needs to login separately
+        return {
+          success: true,
+          message:
+            response.data.message ||
+            "Registration successful. Please login to continue.",
+        };
       }
+      console.log("Signup failed: No success in response");
       return { success: false, error: "Registration failed" };
     } catch (error) {
-      // console.error("Signup error:", error.response.data);
+      console.error("Signup error:", error);
+      console.error("Signup error response:", error.response?.data);
+      console.error("Signup error status:", error.response?.status);
       return {
         success: false,
         error:
@@ -109,21 +190,12 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      // Clear auth state from storage
-      await AsyncStorage.removeItem("userProfile");
-      await AsyncStorage.removeItem("authToken");
-
-      // Clear state
-      setUser(null);
-      setToken(null);
-
-      // Remove authorization header
-      delete axios.defaults.headers.common["Authorization"];
-
+      console.log("Logging out user...");
+      await clearAuthData();
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
-      return { success: false, error: "Unable to logout. Please try again." };
+      return { success: false, error: "Logout failed" };
     }
   };
 
