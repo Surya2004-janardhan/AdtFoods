@@ -23,16 +23,7 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 connectDB();
-// Connect to MongoDB
-// mongoose
-//   .connect(MONGO_URI || "mongodb://localhost:27017/adtfoods", {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true,
-//   })
-//   .then(() => console.log("MongoDB Connected"))
-//   .catch((err) => console.log("MongoDB Connection Error:", err));
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
