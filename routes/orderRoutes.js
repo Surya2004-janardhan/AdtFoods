@@ -16,6 +16,10 @@ const createOrderSchema = {
   tax: { type: "number" },
   paymentMethod: { type: "string", required: true },
   note: { type: "string" },
+  restaurantName: { type: "string" },
+  restaurantLocation: { type: "string" },
+  razorpayOrderId: { type: "string" },
+  razorpayPaymentId: { type: "string" },
 };
 
 // Update order status schema
@@ -28,6 +32,7 @@ const updateOrderStatusSchema = {
 };
 
 // Order routes
+router.get("/orders/count", auth, orderController.getTotalOrderCount);
 router.get("/orders", auth, orderController.getAllOrders);
 router.get("/orders/:userId", auth, orderController.getOrdersByUserId);
 router.post(

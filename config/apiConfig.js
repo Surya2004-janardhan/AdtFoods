@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: "http://192.168.1.4:3500", // Replace with your actual server IP
+  BASE_URL: "http://10.234.34.53:3500", // Use same IP as axiosConfig.js
   ENDPOINTS: {
     PAYMENT: {
       CREATE_ORDER: "/payment/create-order",
@@ -16,9 +16,10 @@ export const API_CONFIG = {
 
 // Razorpay Configuration
 export const RAZORPAY_CONFIG = {
-  KEY_ID: "rzp_test_RDqyGtggIzLZTh", // Your actual Razorpay key ID
+  KEY_ID: "rzp_test_RDqyGtggIzLZTh", // From .env file - RAZORPAY_KEY_ID
   CURRENCY: "INR",
-  COMPANY_NAME: "AdtFoods",
+  COMPANY_NAME: "Aditya Foods",
+  DESCRIPTION: "Aditya Foods Order Payment",
   COMPANY_LOGO: "https://your-logo-url.com/logo.png", // Add your app logo URL
   THEME_COLOR: "#FF6B00",
 };

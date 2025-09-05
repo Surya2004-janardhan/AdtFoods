@@ -1,5 +1,16 @@
 const Order = require("../models/Order");
 
+// Get total order count (for generating order IDs)
+const getTotalOrderCount = async (req, res) => {
+  try {
+    const count = await Order.countDocuments();
+    res.json({ totalOrders: count });
+  } catch (error) {
+    console.error("Error getting total order count:", error);
+    res.status(500).json({ error: "Unable to get order count" });
+  }
+};
+
 // Get all orders
 const getAllOrders = async (req, res) => {
   try {
@@ -40,6 +51,8 @@ const getOrdersByUserId = async (req, res) => {
 // Create a new order
 const createOrder = async (req, res) => {
   try {
+    console.log("Received order data:", JSON.stringify(req.body, null, 2));
+
     const {
       userId,
       name,
@@ -56,14 +69,39 @@ const createOrder = async (req, res) => {
       razorpayPaymentId,
     } = req.body;
 
+    console.log("Destructured data:", {
+      userId,
+      name,
+      restaurant,
+      items: items ? `array of ${items.length} items` : "undefined",
+      totalAmount,
+      paymentMethod,
+    });
+
     if (!userId || !items || !totalAmount || !restaurant) {
+      console.log("Missing required fields:", {
+        userId: !!userId,
+        items: !!items,
+        totalAmount: !!totalAmount,
+        restaurant: !!restaurant,
+      });
       return res.status(400).json({ error: "Missing required order details" });
+    }
+
+    if (!Array.isArray(items)) {
+      console.log("Items is not an array:", typeof items, items);
+      return res.status(400).json({ error: "items should be of type array" });
     }
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Get next order number
+    const lastOrder = await Order.findOne().sort({ orderNumber: -1 });
+    const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1;
+
     const newOrder = new Order({
+      orderNumber: nextOrderNumber,
       userId,
       customerName: name,
       restaurant,
@@ -140,6 +178,7 @@ const updateOrderStatus = async (req, res) => {
 };
 
 module.exports = {
+  getTotalOrderCount,
   getAllOrders,
   getOrdersByUserId,
   createOrder,

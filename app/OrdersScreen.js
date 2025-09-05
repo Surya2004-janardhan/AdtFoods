@@ -156,7 +156,7 @@ const OrdersScreen = () => {
         {/* Header */}
         <View style={styles.orderHeader}>
           <Text style={[styles.orderTitle, { fontFamily: "Poppins-SemiBold" }]}>
-            Order #{item._id?.slice(-6) || "N/A"}
+            Order #{item.orderNumber || item._id?.slice(-6) || "N/A"}
           </Text>
           <View
             style={[
@@ -342,15 +342,35 @@ const OrdersScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Text style={[styles.headerTitle, { fontFamily: "Poppins-Bold" }]}>
-              {userRole === "staff" ? "All Orders" : "My Orders"}
-            </Text>
-            <Text
-              style={[styles.headerSubtitle, { fontFamily: "Poppins-Regular" }]}
-            >
-              {filteredOrders.length}{" "}
-              {filteredOrders.length === 1 ? "order" : "orders"} found
-            </Text>
+            <View style={styles.headerTop}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.push("/HomeScreen")}
+              >
+                <MaterialCommunityIcons
+                  name="arrow-left"
+                  size={24}
+                  color="#374151"
+                />
+              </TouchableOpacity>
+              <View style={styles.headerTitleContainer}>
+                <Text
+                  style={[styles.headerTitle, { fontFamily: "Poppins-Bold" }]}
+                >
+                  {userRole === "staff" ? "All Orders" : "My Orders"}
+                </Text>
+                <Text
+                  style={[
+                    styles.headerSubtitle,
+                    { fontFamily: "Poppins-Regular" },
+                  ]}
+                >
+                  {filteredOrders.length}{" "}
+                  {filteredOrders.length === 1 ? "order" : "orders"} found
+                </Text>
+              </View>
+              <View style={styles.placeholder} />
+            </View>
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>
@@ -635,6 +655,26 @@ const styles = StyleSheet.create({
   headerContent: {
     paddingHorizontal: 24,
     paddingVertical: 16,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f9fafb",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  placeholder: {
+    width: 40,
   },
   headerTitle: {
     fontSize: 24,

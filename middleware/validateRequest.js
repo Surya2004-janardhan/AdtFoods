@@ -27,11 +27,18 @@ const validateRequest = (schema) => {
     Object.keys(schema).forEach((field) => {
       if (req.body[field]) {
         // Type validation
-        if (
-          schema[field].type &&
-          typeof req.body[field] !== schema[field].type
-        ) {
-          errors.push(`${field} should be of type ${schema[field].type}`);
+        if (schema[field].type) {
+          let isValidType = false;
+
+          if (schema[field].type === "array") {
+            isValidType = Array.isArray(req.body[field]);
+          } else {
+            isValidType = typeof req.body[field] === schema[field].type;
+          }
+
+          if (!isValidType) {
+            errors.push(`${field} should be of type ${schema[field].type}`);
+          }
         }
 
         // Pattern validation

@@ -18,6 +18,10 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 const orderSchema = new mongoose.Schema({
+  orderNumber: {
+    type: Number,
+    unique: true,
+  },
   userId: {
     type: String,
     required: true,
