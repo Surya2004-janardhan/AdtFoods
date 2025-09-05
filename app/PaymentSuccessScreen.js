@@ -336,9 +336,9 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   autoRedirectText: {
-    fontFamily: "Poppins",
+    fontFamily: "Poppins-Bold",
     fontSize: 14,
-    color: "#666666",
+    color: "#333333",
   },
   actionButtons: {
     flexDirection: "row",

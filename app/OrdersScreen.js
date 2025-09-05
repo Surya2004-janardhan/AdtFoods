@@ -64,21 +64,55 @@ const OrdersScreen = () => {
     fetchOrders();
   }, []);
 
-  // Filter orders based on search query
+  // Filter orders based on search query - Enhanced search for Order ID, Restaurant Name, and Item Names
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredOrders(orders);
     } else {
-      const filtered = orders.filter(
-        (order) =>
-          order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.restaurant?.name
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.items?.some((item) =>
-            item.food?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+      const searchTerm = searchQuery.toLowerCase().trim();
+      const filtered = orders.filter((order) => {
+        // Search by Order ID (try multiple ID fields)
+        const orderId =
+          order._id?.toLowerCase() || order.id?.toLowerCase() || "";
+        const orderNumber = order.orderNumber?.toString().toLowerCase() || "";
+
+        // Search by Restaurant Name (handle both nested and direct restaurant name)
+        const restaurantName =
+          order.restaurant?.name?.toLowerCase() ||
+          order.restaurantName?.toLowerCase() ||
+          "";
+
+        // Search by Item Names (handle nested food items and direct item names)
+        const itemMatches =
+          order.items?.some((item) => {
+            const foodName =
+              item.food?.name?.toLowerCase() || item.name?.toLowerCase() || "";
+            return foodName.includes(searchTerm);
+          }) || false;
+
+        // Additional flexible matching for partial searches
+        const orderIdMatch =
+          orderId.includes(searchTerm) || orderNumber.includes(searchTerm);
+        const restaurantMatch = restaurantName.includes(searchTerm);
+        const itemMatch = itemMatches;
+
+        // Debug log for troubleshooting (can be removed in production)
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            `🔍 Order ${
+              order._id
+            }: Restaurant="${restaurantName}", Items=[${order.items
+              ?.map((i) => i.food?.name || i.name)
+              .join(", ")}]`
+          );
+        }
+
+        // Return true if any of the search criteria match
+        return orderIdMatch || restaurantMatch || itemMatch;
+      });
+
+      console.log(
+        `🔍 Search for "${searchQuery}" found ${filtered.length} results out of ${orders.length} total orders`
       );
       setFilteredOrders(filtered);
     }
@@ -319,12 +353,17 @@ const OrdersScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loadingText, { fontFamily: "Poppins-Regular" }]}>
-            Loading orders...
-          </Text>
+          <View style={styles.loadingIcon}>
+            <MaterialCommunityIcons
+              name="clipboard-list"
+              size={48}
+              color="#FF6B00"
+            />
+          </View>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading orders...</Text>
         </View>
       </SafeAreaView>
     );
@@ -381,7 +420,7 @@ const OrdersScreen = () => {
               />
               <TextInput
                 style={[styles.searchInput, { fontFamily: "Poppins-Regular" }]}
-                placeholder="Search orders..."
+                placeholder="Search by restaurant, item, or order ID..."
                 placeholderTextColor="#9CA3AF"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -416,7 +455,7 @@ const OrdersScreen = () => {
               style={[styles.emptySubtitle, { fontFamily: "Poppins-Regular" }]}
             >
               {searchQuery
-                ? "Try adjusting your search terms"
+                ? "Try searching by restaurant name, food item, or order ID"
                 : userRole === "staff"
                 ? "No orders have been placed yet."
                 : "You haven't placed any orders yet. Start by browsing restaurants!"}
@@ -466,11 +505,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  loadingIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: "#FFF8F0",
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
   loadingText: {
-    marginTop: 16,
-    color: "#6b7280",
+    marginTop: 8,
+    color: "#333333",
     fontSize: 16,
+    fontFamily: "Poppins-Bold",
   },
   orderCard: {
     backgroundColor: "#ffffff",

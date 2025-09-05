@@ -249,7 +249,6 @@ const UserCartScreen = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation userRole="user" />
-      <Toast />
     </SafeAreaView>
   );
 };

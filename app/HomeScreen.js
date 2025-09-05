@@ -21,7 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import FoodContext from "../context/FoodContext";
 import AuthContext from "../context/AuthContext";
 import BottomNavigation from "../components/BottomNavigation";
-import Toast from "react-native-toast-message";
+import CustomNotification from "../components/CustomNotification";
 
 const { width } = Dimensions.get("window");
 
@@ -413,13 +413,37 @@ const HomeScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#F97316" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              backgroundColor: "#FFF8F0",
+              borderRadius: 40,
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <MaterialCommunityIcons name="store" size={48} color="#FF6B00" />
+          </View>
+          <ActivityIndicator size="large" color="#FF6B00" />
           <Text
-            className="mt-4 text-gray-600 text-base"
-            style={{ fontFamily: "Poppins-Medium" }}
+            style={{
+              marginTop: 8,
+              color: "#333333",
+              fontSize: 16,
+              fontFamily: "Poppins-Bold",
+            }}
           >
             Loading restaurants...
           </Text>

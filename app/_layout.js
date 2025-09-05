@@ -4,7 +4,6 @@ import { OrdersProvider } from "../context/OrdersContext";
 import { AuthProvider } from "../context/AuthContext";
 import { FoodProvider } from "../context/FoodContext";
 import AuthWrapper from "../components/AuthWrapper";
-import Toast from "react-native-toast-message";
 import { useFonts } from "expo-font";
 import { Text, View } from "react-native";
 import "../global.css";
@@ -88,7 +87,6 @@ export default function Layout() {
                 <Stack.Screen name="NotificationsScreen" />
                 <Stack.Screen name="AccountScreen" />
               </Stack>
-              <Toast />
             </AuthWrapper>
           </OrdersProvider>
         </CartProvider>

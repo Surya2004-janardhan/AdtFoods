@@ -30,7 +30,11 @@ export default function PaymentScreen() {
   } = useContext(CartContext);
   const { createOrder } = useContext(OrdersContext);
   const [processing, setProcessing] = useState(false);
-  const [notification, setNotification] = useState({ message: '', type: '', visible: false });
+  const [notification, setNotification] = useState({
+    message: "",
+    type: "",
+    visible: false,
+  });
   const router = useRouter();
 
   const cartItems = getCartItems();
@@ -86,10 +90,10 @@ export default function PaymentScreen() {
   };
 
   // Helper function to show notifications
-  const showNotification = (message, type = 'info') => {
+  const showNotification = (message, type = "info") => {
     setNotification({ message, type, visible: true });
     setTimeout(() => {
-      setNotification(prev => ({ ...prev, visible: false }));
+      setNotification((prev) => ({ ...prev, visible: false }));
     }, 3000);
   };
 
@@ -227,26 +231,8 @@ export default function PaymentScreen() {
           router.push("/HomeScreen");
           router.push("/OrdersScreen");
 
-          // Show success toast after navigation (will appear on OrdersScreen)
-          setTimeout(() => {
-            if (result.success) {
-              Toast.show({
-                type: "success",
-                text1: "Payment Successful",
-                text2: `Order #${orderId} placed successfully!`,
-                visibilityTime: 2000,
-              });
-            } else {
-              console.error("❌ Order creation failed:", result.error);
-              Toast.show({
-                type: "error",
-                text1: "Payment Successful but Order Issue",
-                text2:
-                  "Payment completed but order creation failed. Please contact support.",
-                visibilityTime: 3000,
-              });
-            }
-          }, 100);
+          // Navigation happens immediately - no need for status messages
+          // The orders screen will show the updated orders
         })
         .catch((error) => {
           console.error("❌ Razorpay payment error:", error);
@@ -257,27 +243,17 @@ export default function PaymentScreen() {
             ? "You cancelled the payment. You can try again anytime."
             : error.description || "Payment failed. Please try again.";
 
-          Toast.show({
-            type: isCancelled ? "info" : "error",
-            text1: isCancelled ? "Payment Cancelled" : "Payment Failed",
-            text2: errorMessage,
-            visibilityTime: 4000,
-          });
+          showNotification(errorMessage, isCancelled ? "info" : "error");
 
           // Navigate back to cart page when payment fails/cancelled
-          router.push("/UserCartScreen");
+          setTimeout(() => router.push("/UserCartScreen"), 1500);
         });
     } catch (error) {
       console.error("Error processing payment:", error);
-      Toast.show({
-        type: "error",
-        text1: "Order Error",
-        text2: error.message || "Failed to process order",
-        visibilityTime: 4000,
-      });
+      showNotification(error.message || "Failed to process order", "error");
 
       // Navigate back to cart on any error
-      router.push("/UserCartScreen");
+      setTimeout(() => router.push("/UserCartScreen"), 1500);
     } finally {
       setProcessing(false);
     }
@@ -310,6 +286,13 @@ export default function PaymentScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
       </View>
+
+      {/* Custom Notification */}
+      <CustomNotification
+        message={notification.message}
+        type={notification.type}
+        visible={notification.visible}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Restaurant Info */}

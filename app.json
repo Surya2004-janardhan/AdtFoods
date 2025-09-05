@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Aditya Foods",
-    "slug": "fin2",
+    "slug": "aditya-foods",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/fonts/icon.png",
-    "scheme": "myapp",
+    "scheme": "adityafoods",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,22 +13,22 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/fonts/logo.png",
+        "foregroundImage": "./assets/fonts/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.surya_expo.fin2"
+      "package": "com.surya_expo.adityafoods"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/fonts/logo.png"
+      "favicon": "./assets/fonts/icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/login.png",
+          "image": "./assets/fonts/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -43,8 +43,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "4b6620d0-5a0c-4dc7-a72d-a77bc38a0fb5"
+        "projectId": "e1d7c800-8350-464a-939b-a85737710b61"
       }
-    }
+    },
+    "owner": "surya_expo"
   }
 }

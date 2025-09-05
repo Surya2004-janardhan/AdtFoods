@@ -305,13 +305,37 @@ const UserFoodItemsScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#F97316" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              backgroundColor: "#FFF8F0",
+              borderRadius: 40,
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <MaterialCommunityIcons name="food" size={48} color="#FF6B00" />
+          </View>
+          <ActivityIndicator size="large" color="#FF6B00" />
           <Text
-            className="mt-4 text-gray-600"
-            style={{ fontFamily: "Poppins-Medium" }}
+            style={{
+              marginTop: 8,
+              color: "#333333",
+              fontSize: 16,
+              fontFamily: "Poppins-Bold",
+            }}
           >
             Loading menu...
           </Text>

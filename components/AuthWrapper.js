@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useRouter, useSegments } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AuthContext from "../context/AuthContext";
 
 const AuthWrapper = ({ children }) => {
@@ -32,11 +33,40 @@ const AuthWrapper = ({ children }) => {
   // Show loading screen while checking authentication - after all hooks
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#FFFFFF",
+          gap: 16,
+        }}
+      >
+        <View
+          style={{
+            width: 80,
+            height: 80,
+            backgroundColor: "#FFF8F0",
+            borderRadius: 40,
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <MaterialCommunityIcons
+            name="shield-account"
+            size={48}
+            color="#FF6B00"
+          />
+        </View>
+        <ActivityIndicator size="large" color="#FF6B00" />
         <Text
-          className="mt-4 text-gray-600"
-          style={{ fontFamily: "Poppins-Regular" }}
+          style={{
+            marginTop: 8,
+            color: "#333333",
+            fontSize: 16,
+            fontFamily: "Poppins-Bold",
+          }}
         >
           Loading...
         </Text>

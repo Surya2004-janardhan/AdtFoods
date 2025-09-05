@@ -332,7 +332,6 @@ const StaffOrdersScreen = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation userRole="staff" />
-      <Toast />
     </SafeAreaView>
   );
 };
@@ -362,9 +361,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   loadingText: {
-    fontFamily: "Poppins",
+    fontFamily: "Poppins-Bold",
     fontSize: 16,
-    color: "#666666",
+    color: "#333333",
+    marginTop: 8,
   },
   header: {
     flexDirection: "row",

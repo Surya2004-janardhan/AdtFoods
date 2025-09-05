@@ -3,39 +3,31 @@ import { View, Text, ActivityIndicator, Image, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-import Toast from "react-native-toast-message";
 import { CartProvider } from "../context/CartContext";
 import { OrdersProvider } from "../context/OrdersContext";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as SplashScreen from "expo-splash-screen";
 
 export default function IndexScreen() {
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(true);
+  const [splashFinished, setSplashFinished] = useState(false);
   const router = useRouter();
+
+  // Keep the splash screen visible while we fetch resources
+  SplashScreen.preventAutoHideAsync();
 
   useEffect(() => {
     // Check internet connectivity
     const unsubscribe = NetInfo.addEventListener((state) => {
       if (state.isConnected) {
         if (!isConnected) {
-          Toast.show({
-            type: "success",
-            text1: "Connected to the Internet",
-            visibilityTime: 3000,
-            autoHide: true,
-            topOffset: 40,
-          });
+          console.log("📶 Connected to the Internet");
         }
       } else {
         if (isConnected) {
-          Toast.show({
-            type: "error",
-            text1: "No Internet Connection",
-            text2: "Please check your connection",
-            visibilityTime: 0,
-            autoHide: false,
-            topOffset: 40,
-          });
+          console.log(
+            "❌ No Internet Connection - Please check your connection"
+          );
         }
       }
       setIsConnected(state.isConnected);
@@ -45,17 +37,39 @@ export default function IndexScreen() {
   }, [isConnected]);
 
   useEffect(() => {
-    const checkLoginState = async () => {
+    console.log("🚀 App started - Beginning splash screen timer");
+
+    // First effect: Start the splash screen timer
+    const splashTimer = setTimeout(async () => {
+      console.log("⏰ 3 seconds elapsed - Hiding native splash screen");
+      await SplashScreen.hideAsync();
+      setSplashFinished(true);
+    }, 3000);
+
+    return () => {
+      clearTimeout(splashTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Second effect: Handle navigation after splash is finished
+    if (!splashFinished) return;
+
+    const handleNavigation = async () => {
       try {
-        // Simulate a short delay for splash screen effect
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        console.log("🔄 Splash finished, checking login state...");
+
         const userToken = await AsyncStorage.getItem("userToken");
+        console.log("🔑 User token:", userToken ? "exists" : "not found");
 
         if (userToken === "staff") {
+          console.log("👨‍💼 Navigating to Staff screen");
           router.replace("/StaffFoodItemsScreen");
         } else if (userToken) {
+          console.log("👤 Navigating to Home screen");
           router.replace("/HomeScreen");
         } else {
+          console.log("🔒 Navigating to Auth screen");
           router.replace("/AuthScreen");
         }
       } catch (error) {
@@ -65,8 +79,8 @@ export default function IndexScreen() {
       }
     };
 
-    checkLoginState();
-  }, []);
+    handleNavigation();
+  }, [splashFinished]);
 
   if (loading) {
     return (
@@ -81,28 +95,22 @@ export default function IndexScreen() {
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
         <View style={{ alignItems: "center", marginBottom: 32 }}>
-          <View
+          {/* Custom Logo Image */}
+          <Image
+            source={require("../assets/fonts/icon.png")}
             style={{
-              width: 96,
-              height: 96,
-              backgroundColor: "#FF6B00",
-              borderRadius: 48,
-              alignItems: "center",
-              justifyContent: "center",
+              width: 120,
+              height: 120,
               marginBottom: 20,
-              shadowColor: "#FF6B00",
+              borderRadius: 60,
+              shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
               elevation: 10,
             }}
-          >
-            <MaterialCommunityIcons
-              name="food-fork-drink"
-              size={56}
-              color="white"
-            />
-          </View>
+            resizeMode="contain"
+          />
 
           <Text
             style={{
@@ -118,9 +126,9 @@ export default function IndexScreen() {
 
           <Text
             style={{
-              fontFamily: "Poppins",
+              fontFamily: "Poppins-Bold",
               color: "#666666",
-              fontSize: 16,
+              fontSize: 14,
               textAlign: "center",
             }}
           >
@@ -149,9 +157,7 @@ export default function IndexScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <CartProvider>
-        <OrdersProvider>
-          <Toast />
-        </OrdersProvider>
+        <OrdersProvider></OrdersProvider>
       </CartProvider>
     </View>
   );

@@ -8,13 +8,14 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  Image,
 } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import axios from "../axiosConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import AuthContext from "../context/AuthContext";
-import Toast from "react-native-toast-message";
+import CustomNotification from "../components/CustomNotification";
 
 // Prevent keyboard from dismissing on submit
 if (TextInput.defaultProps == null) TextInput.defaultProps = {};
@@ -40,7 +41,7 @@ const InputField = ({
       >
         {label}
       </Text>
-      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-2.5 shadow-sm">
+      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-3.5 shadow-sm">
         <MaterialCommunityIcons
           name={icon}
           size={16}
@@ -90,17 +91,26 @@ const AuthScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({
+    message: "",
+    type: "",
+    visible: false,
+  });
 
   const router = useRouter();
   const authContext = useContext(AuthContext);
 
+  // Helper function to show notifications
+  const showNotification = (message, type = "info") => {
+    setNotification({ message, type, visible: true });
+    setTimeout(() => {
+      setNotification((prev) => ({ ...prev, visible: false }));
+    }, 3000);
+  };
+
   const handleLogin = async () => {
     if (!userId || !password) {
-      Toast.show({
-        type: "error",
-        text1: "Missing Fields",
-        text2: "Please fill in all required fields",
-      });
+      showNotification("Please fill in all required fields", "error");
       return;
     }
 
@@ -118,24 +128,12 @@ const AuthScreen = () => {
           router.replace("/HomeScreen");
         }
 
-        Toast.show({
-          type: "success",
-          text1: "Login Successful",
-          text2: "Welcome back!",
-        });
+        showNotification("Welcome back!", "success");
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Login Failed",
-          text2: result.error,
-        });
+        showNotification(result.error || "Login failed", "error");
       }
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Login Failed",
-        text2: "An unexpected error occurred",
-      });
+      showNotification(error.message || "Network error occurred", "error");
     } finally {
       setLoading(false);
     }
@@ -143,11 +141,7 @@ const AuthScreen = () => {
 
   const handleSignup = async () => {
     if (!name || !email || !phoneNumber || !userId || !password) {
-      Toast.show({
-        type: "error",
-        text1: "Missing Fields",
-        text2: "Please fill in all required fields",
-      });
+      showNotification("Please fill in all required fields", "error");
       return;
     }
 
@@ -168,11 +162,10 @@ const AuthScreen = () => {
         // Switch to login mode and show success message
         setIsLogin(true);
 
-        Toast.show({
-          type: "success",
-          text1: "Registration Successful",
-          text2: result.message || "Please login to continue",
-        });
+        showNotification(
+          result.message || "Registration successful! Please login to continue",
+          "success"
+        );
 
         // Clear signup form but keep userId for login
         setName("");
@@ -181,18 +174,10 @@ const AuthScreen = () => {
         setPassword("");
         // Keep userId filled for convenience
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Registration Failed",
-          text2: result.error,
-        });
+        showNotification(result.error || "Registration failed", "error");
       }
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Registration Failed",
-        text2: "An unexpected error occurred",
-      });
+      showNotification("An unexpected error occurred", "error");
     } finally {
       setLoading(false);
     }
@@ -205,6 +190,14 @@ const AuthScreen = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+
+      {/* Custom Notification */}
+      <CustomNotification
+        message={notification.message}
+        type={notification.type}
+        visible={notification.visible}
+      />
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -218,13 +211,17 @@ const AuthScreen = () => {
         <View className="flex-1 justify-center min-h-full">
           {/* Logo Section */}
           <View className="items-center mb-6">
-            <View className="w-16 h-16 bg-orange-500 rounded-2xl items-center justify-center mb-3 shadow-lg">
-              <MaterialCommunityIcons
-                name="food-fork-drink"
-                size={32}
-                color="white"
-              />
-            </View>
+            {/* Custom Logo Image */}
+            <Image
+              source={require("../assets/fonts/icon.png")}
+              style={{
+                width: 80,
+                height: 80,
+                marginBottom: 12,
+                borderRadius: 20,
+              }}
+              resizeMode="contain"
+            />
             <Text
               className="text-3xl text-gray-900 text-center m-1"
               style={{ fontFamily: "Poppins-Bold" }}
@@ -342,7 +339,6 @@ const AuthScreen = () => {
           <View className="w-12 h-0.5 bg-orange-500 rounded self-center mt-6" />
         </View>
       </ScrollView>
-      <Toast />
     </KeyboardAvoidingView>
   );
 };
