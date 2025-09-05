@@ -16,7 +16,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import OrdersContext from "../context/OrdersContext";
-import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const OrdersScreen = () => {
@@ -487,8 +486,6 @@ const OrdersScreen = () => {
           />
         )}
       </KeyboardAvoidingView>
-
-      <BottomNavigation userRole={userRole} />
     </SafeAreaView>
   );
 };

@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const StaffOrdersScreen = () => {
@@ -329,9 +328,6 @@ const StaffOrdersScreen = () => {
           </View>
         )}
       />
-
-      {/* Bottom Navigation */}
-      <BottomNavigation userRole="staff" />
     </SafeAreaView>
   );
 };

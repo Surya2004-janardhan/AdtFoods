@@ -4,6 +4,7 @@ import { OrdersProvider } from "../context/OrdersContext";
 import { AuthProvider } from "../context/AuthContext";
 import { FoodProvider } from "../context/FoodContext";
 import AuthWrapper from "../components/AuthWrapper";
+import MainLayout from "../components/MainLayout";
 import { useFonts } from "expo-font";
 import { Text, View } from "react-native";
 import "../global.css";
@@ -60,33 +61,35 @@ export default function Layout() {
         <CartProvider>
           <OrdersProvider>
             <AuthWrapper>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: {
-                    backgroundColor: "#FFFFFF", // Modern white background
-                  },
-                }}
-              >
-                <Stack.Screen name="index" options={{ title: "Home" }} />
-                <Stack.Screen name="AuthScreen" />
-                <Stack.Screen name="HomeScreen" />
-                <Stack.Screen name="UserFoodItemsScreen" />
-                <Stack.Screen name="PaymentScreen" />
-                <Stack.Screen name="PaymentSuccessScreen" />
-                <Stack.Screen name="UserCartScreen" />
-                <Stack.Screen name="StaffFoodItemsScreen" />
-                <Stack.Screen name="StaffOrdersScreen" />
-                <Stack.Screen
-                  name="OrdersScreen"
-                  options={{
-                    gestureEnabled: true,
-                    gestureDirection: "horizontal",
+              <MainLayout>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: {
+                      backgroundColor: "#FFFFFF", // Modern white background
+                    },
                   }}
-                />
-                <Stack.Screen name="NotificationsScreen" />
-                <Stack.Screen name="AccountScreen" />
-              </Stack>
+                >
+                  <Stack.Screen name="index" options={{ title: "Home" }} />
+                  <Stack.Screen name="AuthScreen" />
+                  <Stack.Screen name="HomeScreen" />
+                  <Stack.Screen name="UserFoodItemsScreen" />
+                  <Stack.Screen name="PaymentScreen" />
+                  <Stack.Screen name="PaymentSuccessScreen" />
+                  <Stack.Screen name="UserCartScreen" />
+                  <Stack.Screen name="StaffFoodItemsScreen" />
+                  <Stack.Screen name="StaffOrdersScreen" />
+                  <Stack.Screen
+                    name="OrdersScreen"
+                    options={{
+                      gestureEnabled: true,
+                      gestureDirection: "horizontal",
+                    }}
+                  />
+                  <Stack.Screen name="NotificationsScreen" />
+                  <Stack.Screen name="AccountScreen" />
+                </Stack>
+              </MainLayout>
             </AuthWrapper>
           </OrdersProvider>
         </CartProvider>

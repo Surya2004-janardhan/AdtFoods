@@ -14,7 +14,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AuthContext from "../context/AuthContext";
-import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const AccountScreen = () => {
@@ -281,9 +280,6 @@ const AccountScreen = () => {
         {/* Add padding for bottom navigation */}
         <View style={styles.bottomPadding} />
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <BottomNavigation userRole={userRole} />
     </SafeAreaView>
   );
 };

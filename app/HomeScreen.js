@@ -20,7 +20,6 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FoodContext from "../context/FoodContext";
 import AuthContext from "../context/AuthContext";
-import BottomNavigation from "../components/BottomNavigation";
 import CustomNotification from "../components/CustomNotification";
 
 const { width } = Dimensions.get("window");
@@ -607,8 +606,6 @@ const HomeScreen = () => {
             }
           />
         )}
-
-        {!keyboardVisible && <BottomNavigation userRole={userRole} />}
       </SafeAreaView>
     </KeyboardAvoidingView>
   );

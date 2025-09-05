@@ -9,7 +9,6 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BottomNavigation from "../components/BottomNavigation";
 
 const NotificationsScreen = () => {
   const [userRole, setUserRole] = useState("user");
@@ -170,8 +169,6 @@ const NotificationsScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-
-      <BottomNavigation userRole={userRole} />
     </SafeAreaView>
   );
 };

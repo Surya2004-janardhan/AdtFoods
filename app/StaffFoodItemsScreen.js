@@ -15,7 +15,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FoodContext from "../context/FoodContext";
-import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 
 const StaffFoodItemsScreen = () => {
@@ -197,9 +196,6 @@ const StaffFoodItemsScreen = () => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
-
-      {/* Bottom Navigation */}
-      <BottomNavigation userRole="staff" />
     </SafeAreaView>
   );
 };
