@@ -13,9 +13,9 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CartContext } from "../Backend/context/CartContext";
-import OrdersContext from "../Backend/context/OrdersContext";
-import BottomNavigation from "../Backend/components/BottomNavigation";
+import { CartContext } from "../context/CartContext";
+import OrdersContext from "../context/OrdersContext";
+import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 import RazorpayCheckout from "react-native-razorpay";
 import { API_CONFIG, RAZORPAY_CONFIG } from "../apiConfig";
@@ -102,7 +102,7 @@ export default function PaymentScreen() {
 
       // Create Razorpay order
       const razorpayOrderResponse = await fetch(
-        `${API_CONFIG.BASE_URL}/api/payment/create-order`,
+        `${API_CONFIG.BASE_URL}/create-order`,
         {
           method: "POST",
           headers: {

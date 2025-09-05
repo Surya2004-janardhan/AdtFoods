@@ -34,7 +34,7 @@ app.use(morgan("dev")); // HTTP request logger
 app.use("/", authRoutes);
 app.use("/", foodRoutes);
 app.use("/", orderRoutes);
-app.use("/payment", paymentRoutes);
+app.use("/", paymentRoutes);
 
 // Home route
 app.get("/", (req, res) => {

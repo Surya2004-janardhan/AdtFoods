@@ -131,7 +131,7 @@ export default function PaymentScreen() {
       // Create Razorpay order
       console.log("💳 Creating Razorpay order...");
       const razorpayOrderResponse = await fetch(
-        `${API_CONFIG.BASE_URL}/payment/create-order`,
+        `${API_CONFIG.BASE_URL}/create-order`,
         {
           method: "POST",
           headers: {
