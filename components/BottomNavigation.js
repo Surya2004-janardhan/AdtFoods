@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderTopWidth: 1,
     borderTopColor: "#F0F0F0",
+    borderRadius: 20,
   },
   navContainer: {
     flexDirection: "row",
@@ -153,11 +154,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 5,
     backgroundColor: "#FFFFFF",
+    borderRadius: 20,
   },
   navItem: {
     alignItems: "center",
     flex: 1,
     paddingVertical: 8,
+    borderRadius: 20,
   },
   activeNavItem: {
     // Active item styling handled in iconContainer
@@ -182,6 +185,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
+    borderRadius: 20,
   },
   navText: {
     fontSize: 12,

@@ -35,8 +35,8 @@ const InputField = ({
   return (
     <View className="mb-3">
       <Text
-        className="text-sm text-gray-600 mb-1.5"
-        style={{ fontFamily: "Poppins-Medium" }}
+        className="text-xl text-gray-500 mb-2"
+        style={{ fontFamily: "Poppins-SemiBold" }}
       >
         {label}
       </Text>
@@ -226,7 +226,7 @@ const AuthScreen = () => {
               />
             </View>
             <Text
-              className="text-3xl text-gray-900 text-center mb-1"
+              className="text-3xl text-gray-900 text-center m-1"
               style={{ fontFamily: "Poppins-Bold" }}
             >
               ADITYA FOODS
@@ -243,7 +243,7 @@ const AuthScreen = () => {
           <View className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
             <View className="mb-4">
               <Text
-                className="text-xl text-gray-900 text-center mb-1"
+                className="text-2xl text-gray-900 text-center mb-1"
                 style={{ fontFamily: "Poppins-Bold" }}
               >
                 {isLogin ? "Welcome Back" : "Create Account"}
@@ -311,7 +311,7 @@ const AuthScreen = () => {
               activeOpacity={0.8}
             >
               <Text
-                className="text-white text-lg"
+                className="text-white text-xl"
                 style={{ fontFamily: "Poppins-Bold" }}
               >
                 {loading

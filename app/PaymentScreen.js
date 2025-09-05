@@ -44,6 +44,70 @@ export default function PaymentScreen() {
   const tax = Math.round(calculateSubtotal() * 0.08);
   const total = calculateSubtotal() + deliveryFee + tax;
 
+  // Test function to simulate successful payment (for development)
+  const testPaymentSuccess = async () => {
+    setProcessing(true);
+
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const userName = (await AsyncStorage.getItem("userName")) || "Customer";
+
+      // Simulate successful payment data
+      const testPaymentData = {
+        razorpay_order_id: `order_test_${Date.now()}`,
+        razorpay_payment_id: `pay_test_${Date.now()}`,
+        razorpay_signature: "test_signature",
+      };
+
+      // Create order directly
+      const orderData = {
+        userId: userId,
+        name: userName,
+        restaurant: currentRestaurantId,
+        items: cartItems.map((item) => ({
+          food: item._id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalAmount: total,
+        deliveryFee: deliveryFee,
+        tax: tax,
+        paymentMethod: "razorpay",
+        restaurantName: restaurantInfo?.name || "Restaurant",
+        restaurantLocation: restaurantInfo?.location || "Unknown Location",
+        razorpayOrderId: testPaymentData.razorpay_order_id,
+        razorpayPaymentId: testPaymentData.razorpay_payment_id,
+        note: "",
+      };
+
+      console.log("Creating test order with data:", orderData);
+      const result = await createOrder(orderData);
+
+      if (result.success) {
+        clearRestaurantCart();
+
+        Toast.show({
+          type: "success",
+          text1: "Test Payment Successful",
+          text2: "Your order has been placed successfully!",
+        });
+
+        router.replace("/OrdersScreen");
+      } else {
+        throw new Error(result.error || "Failed to create order");
+      }
+    } catch (error) {
+      console.error("Error processing test payment:", error);
+      Toast.show({
+        type: "error",
+        text1: "Test Payment Error",
+        text2: error.message || "Failed to process payment",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const processPayment = async () => {
     if (!currentRestaurantId || cartItems.length === 0) {
       Toast.show({
@@ -59,38 +123,25 @@ export default function PaymentScreen() {
     try {
       const userId = await AsyncStorage.getItem("userId");
       const userName = (await AsyncStorage.getItem("userName")) || "Customer";
-      const token = await AsyncStorage.getItem("token");
 
-      // Create Razorpay order first
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT.CREATE_ORDER}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            amount: total,
-            currency: RAZORPAY_CONFIG.CURRENCY,
-          }),
-        }
-      );
+      // For testing: Skip backend API call and use dummy Razorpay order
+      console.log("Testing Razorpay with dummy data for amount:", total);
 
-      const razorpayOrderData = await response.json();
+      // Create dummy Razorpay order data (normally from backend)
+      const dummyRazorpayOrderData = {
+        success: true,
+        orderId: `order_${Date.now()}`,
+        amount: Math.round(total * 100), // Amount in paise
+        currency: "INR",
+      };
 
-      if (!razorpayOrderData.success) {
-        throw new Error("Failed to create payment order");
-      }
-
-      // Configure Razorpay options
+      // Configure Razorpay options with dummy data
       const options = {
         description: `Order from ${restaurantInfo?.name || "Restaurant"}`,
-        image: RAZORPAY_CONFIG.COMPANY_LOGO,
         currency: RAZORPAY_CONFIG.CURRENCY,
         key: RAZORPAY_CONFIG.KEY_ID,
-        amount: razorpayOrderData.amount,
-        order_id: razorpayOrderData.orderId,
+        amount: dummyRazorpayOrderData.amount,
+        order_id: dummyRazorpayOrderData.orderId,
         name: RAZORPAY_CONFIG.COMPANY_NAME,
         prefill: {
           email: "customer@example.com",
@@ -103,77 +154,73 @@ export default function PaymentScreen() {
       };
 
       // Open Razorpay payment gateway
+      console.log("Opening Razorpay with options:", options);
       RazorpayCheckout.open(options)
         .then(async (data) => {
-          // Payment successful - verify payment
-          const verifyResponse = await fetch(
-            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT.VERIFY_PAYMENT}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                razorpay_order_id: data.razorpay_order_id,
-                razorpay_payment_id: data.razorpay_payment_id,
-                razorpay_signature: data.razorpay_signature,
-              }),
-            }
-          );
+          console.log("Razorpay payment success:", data);
 
-          const verifyResult = await verifyResponse.json();
+          // For testing: Skip payment verification and directly create order
+          console.log("Skipping payment verification for testing...");
 
-          if (verifyResult.success) {
-            // Create order in database after successful payment
-            const orderData = {
-              userId: userId,
-              name: userName,
-              restaurant: currentRestaurantId,
-              items: cartItems.map((item) => ({
-                food: item._id,
-                quantity: item.quantity,
-                price: item.price,
-              })),
-              totalAmount: total,
-              deliveryFee: deliveryFee,
-              tax: tax,
-              paymentMethod: "razorpay",
-              restaurantName: restaurantInfo?.name || "Restaurant",
-              restaurantLocation:
-                restaurantInfo?.location || "Unknown Location",
-              razorpayOrderId: data.razorpay_order_id,
-              razorpayPaymentId: data.razorpay_payment_id,
-              note: "",
-            };
+          // Create order in database after successful payment
+          const orderData = {
+            userId: userId,
+            name: userName,
+            restaurant: currentRestaurantId,
+            items: cartItems.map((item) => ({
+              food: item._id,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            totalAmount: total,
+            deliveryFee: deliveryFee,
+            tax: tax,
+            paymentMethod: "razorpay",
+            restaurantName: restaurantInfo?.name || "Restaurant",
+            restaurantLocation: restaurantInfo?.location || "Unknown Location",
+            razorpayOrderId: data.razorpay_order_id,
+            razorpayPaymentId: data.razorpay_payment_id,
+            note: "",
+          };
 
-            const result = await createOrder(orderData);
+          const result = await createOrder(orderData);
 
-            if (result.success) {
-              clearRestaurantCart();
+          if (result.success) {
+            clearRestaurantCart();
 
-              Toast.show({
-                type: "success",
-                text1: "Payment Successful",
-                text2: "Your order has been placed successfully!",
-              });
+            Toast.show({
+              type: "success",
+              text1: "Payment Successful",
+              text2: "Your order has been placed successfully!",
+            });
 
-              // Navigate to orders page instead of payment success
-              router.replace("/OrdersScreen");
-            } else {
-              throw new Error(result.error || "Failed to create order");
-            }
+            // Navigate to orders page
+            router.replace("/OrdersScreen");
           } else {
-            throw new Error("Payment verification failed");
+            throw new Error(result.error || "Failed to create order");
           }
         })
         .catch((error) => {
           // Payment failed or cancelled
           console.log("Payment error:", error);
+
+          // Check if payment was cancelled by user
+          const isCancelled =
+            error.code === 0 ||
+            error.error?.reason === "payment_cancelled" ||
+            error.error?.code === "BAD_REQUEST_ERROR";
+
+          const errorMessage = isCancelled
+            ? "Payment was cancelled by user"
+            : error.error?.description ||
+              error.description ||
+              error.message ||
+              "Payment failed";
+
           Toast.show({
-            type: "error",
-            text1: "Payment Failed",
-            text2: error.description || "Payment was cancelled or failed",
+            type: isCancelled ? "info" : "error",
+            text1: isCancelled ? "Payment Cancelled" : "Payment Failed",
+            text2: errorMessage,
           });
         });
     } catch (error) {
@@ -273,6 +320,17 @@ export default function PaymentScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
+        {/* Test Payment Button for Development */}
+        <TouchableOpacity
+          style={[styles.testPayButton, processing && styles.disabledButton]}
+          onPress={testPaymentSuccess}
+          disabled={processing}
+        >
+          <Text style={styles.testPayButtonText}>
+            🧪 Test Payment (Skip Razorpay)
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.payButton, processing && styles.disabledButton]}
           onPress={processPayment}
@@ -459,6 +517,21 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderTopWidth: 1,
     borderTopColor: "#F0F0F0",
+  },
+  testPayButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#1e7e34",
+  },
+  testPayButtonText: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 14,
+    color: "#FFFFFF",
   },
   payButton: {
     backgroundColor: "#FF6B00",

@@ -474,7 +474,7 @@ const HomeScreen = () => {
               </View>
             </View>
 
-            <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-2">
+            <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-4">
               <MaterialCommunityIcons
                 name="magnify"
                 size={20}

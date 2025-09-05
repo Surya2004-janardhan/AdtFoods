@@ -16,7 +16,7 @@ export const API_CONFIG = {
 
 // Razorpay Configuration
 export const RAZORPAY_CONFIG = {
-  KEY_ID: "rzp_test_your_key_id_here", // Replace with your actual Razorpay key ID
+  KEY_ID: "rzp_test_RDqyGtggIzLZTh", // Your actual Razorpay key ID
   CURRENCY: "INR",
   COMPANY_NAME: "AdtFoods",
   COMPANY_LOGO: "https://your-logo-url.com/logo.png", // Add your app logo URL
