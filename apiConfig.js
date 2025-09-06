@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: "http://10.234.34.53:3500", // Use same IP as axiosConfig.js
+  BASE_URL: "https://adtfoods.onrender.com", // Removed trailing slash
   ENDPOINTS: {
     PAYMENT: {
       CREATE_ORDER: "/create-order",
