@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Keyboard } from "react-native";
 import { usePathname } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 import BottomNavigation from "./BottomNavigation";
 
 const MainLayout = ({ children }) => {
@@ -70,6 +71,7 @@ const MainLayout = ({ children }) => {
       {shouldShowBottomNav && !keyboardVisible && (
         <BottomNavigation userRole={userRole} />
       )}
+      <Toast />
     </View>
   );
 };
