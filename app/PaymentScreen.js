@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CartContext } from "../context/CartContext";
 import OrdersContext from "../context/OrdersContext";
 import BottomNavigation from "../components/BottomNavigation";
-import CustomNotification from "../components/CustomNotification";
+import Toast from "react-native-toast-message";
 import RazorpayCheckout from "react-native-razorpay";
 import { API_CONFIG, RAZORPAY_CONFIG } from "../config/apiConfig";
 
@@ -30,43 +30,24 @@ export default function PaymentScreen() {
   } = useContext(CartContext);
   const { createOrder } = useContext(OrdersContext);
   const [processing, setProcessing] = useState(false);
-  const [notification, setNotification] = useState({
-    message: "",
-    type: "",
-    visible: false,
-  });
   const router = useRouter();
 
   const cartItems = getCartItems();
   const restaurantInfo = getCurrentRestaurantInfo();
 
   const calculateSubtotal = () => {
-    const subtotal = calculateTotal();
-    console.log("💰 Subtotal calculation:", subtotal);
-    return subtotal;
+    return calculateTotal();
   };
 
   const deliveryFee = restaurantInfo?.deliveryFee || 30;
   const tax = Math.round(calculateSubtotal() * 0.08);
   const total = calculateSubtotal() + deliveryFee + tax;
 
-  console.log("💵 Payment amounts:", {
-    subtotal: calculateSubtotal(),
-    deliveryFee,
-    tax,
-    total,
-    razorpayAmount: "Backend will calculate (total * 100)",
-  });
-
   // Get next order ID based on total order count
   const getNextOrderId = async () => {
     try {
-      const token = await AsyncStorage.getItem("authToken"); // Use correct token key
-      console.log(
-        "🔑 Token for order count:",
-        token ? "Token exists" : "No token"
-      );
-
+      const token = await AsyncStorage.getItem("authToken");
+      
       const response = await fetch(`${API_CONFIG.BASE_URL}/orders/count`, {
         method: "GET",
         headers: {
@@ -80,32 +61,20 @@ export default function PaymentScreen() {
         return (data.totalOrders || 0) + 1;
       }
 
-      // Fallback to timestamp if API fails
       return Date.now() % 100000;
-    } catch (error) {
-      console.error("Error getting order count:", error);
-      // Fallback to timestamp if API fails
+    } catch (_error) {
       return Date.now() % 100000;
     }
   };
 
-  // Helper function to show notifications
-  const showNotification = (message, type = "info") => {
-    setNotification({ message, type, visible: true });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, visible: false }));
-    }, 3000);
-  };
-
   // Main place order function with Razorpay
   const placeOrder = async () => {
-    console.log("🚀 Place Order button pressed");
-    console.log("Cart items:", cartItems);
-    console.log("Restaurant ID:", currentRestaurantId);
-    console.log("Total amount:", total);
-
     if (!currentRestaurantId || cartItems.length === 0) {
-      showNotification("Please add items to your cart", "error");
+      Toast.show({
+        type: "error",
+        text1: "Invalid Order",
+        text2: "Please add items to your cart",
+      });
       return;
     }
 
@@ -114,22 +83,22 @@ export default function PaymentScreen() {
     try {
       const userId = await AsyncStorage.getItem("userId");
       const userName = (await AsyncStorage.getItem("userName")) || "Customer";
-      const token = await AsyncStorage.getItem("authToken"); // Use correct token key
-
-      console.log("📱 User data:", { userId, userName, tokenExists: !!token });
+      const token = await AsyncStorage.getItem("token");
 
       if (!userId || !token) {
-        showNotification("Please login to place order", "error");
+        Toast.show({
+          type: "error",
+          text1: "Authentication Required",
+          text2: "Please login to place order",
+        });
         setProcessing(false);
         return;
       }
 
       // Get next order ID
       const orderId = await getNextOrderId();
-      console.log("🔢 Generated Order ID:", orderId);
 
       // Create Razorpay order
-      console.log("💳 Creating Razorpay order...");
       const razorpayOrderResponse = await fetch(
         `${API_CONFIG.BASE_URL}/create-order`,
         {
@@ -139,26 +108,18 @@ export default function PaymentScreen() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            amount: total, // Send raw amount, backend will convert to paise
+            amount: total * 100, // Convert to paise
             currency: "INR",
             receipt: `order_${orderId}_${Date.now()}`,
           }),
         }
       );
 
-      console.log(
-        "📞 Razorpay API Response Status:",
-        razorpayOrderResponse.status
-      );
-
       if (!razorpayOrderResponse.ok) {
-        const errorText = await razorpayOrderResponse.text();
-        console.error("❌ Razorpay order creation failed:", errorText);
         throw new Error("Failed to create payment order");
       }
 
       const razorpayOrderData = await razorpayOrderResponse.json();
-      console.log("✅ Razorpay order created:", razorpayOrderData);
 
       // Razorpay checkout options
       const options = {
@@ -183,77 +144,71 @@ export default function PaymentScreen() {
       };
 
       // Open Razorpay payment gateway
-      console.log("🏪 Opening Razorpay checkout...");
       RazorpayCheckout.open(options)
         .then(async (paymentData) => {
-          console.log("✅ Razorpay payment success:", paymentData);
-
           // Create order in database after successful payment
           const orderData = {
             userId: userId,
             name: userName,
-            restaurant: String(currentRestaurantId), // Ensure it's a string
+            restaurant: currentRestaurantId,
             items: cartItems.map((item) => ({
               food: String(item._id || item.id),
               quantity: parseInt(item.quantity) || 1,
               price: parseFloat(item.price) || 0,
             })),
-            totalAmount: Math.round(parseFloat(total) * 100) / 100, // Round to 2 decimal places
-            deliveryFee: Math.round(parseFloat(deliveryFee) * 100) / 100,
-            tax: Math.round(parseFloat(tax) * 100) / 100,
-            paymentMethod: "razorpay", // Use enum value from Order model
+            totalAmount: parseFloat(total),
+            deliveryFee: parseFloat(deliveryFee),
+            tax: parseFloat(tax),
+            paymentMethod: "online",
             restaurantName: restaurantInfo?.name || "Restaurant",
             restaurantLocation: restaurantInfo?.location || "Unknown Location",
-            razorpayOrderId: razorpayOrderData.orderId,
+            razorpayOrderId: razorpayOrderData.id,
             razorpayPaymentId: paymentData.razorpay_payment_id,
             note: "Online Payment via Razorpay",
           };
 
-          console.log("📋 Creating order with data:", orderData);
-          console.log("🔍 Restaurant ID validation:", {
-            currentRestaurantId,
-            isString: typeof currentRestaurantId,
-            length: currentRestaurantId?.length,
-          });
           const result = await createOrder(orderData);
-          console.log("📝 Order creation result:", result);
 
-          // Clear cart immediately after payment success
-          clearRestaurantCart();
-          console.log("🛒 Cart cleared successfully");
+          if (result.success) {
+            clearRestaurantCart();
 
-          // Navigate to orders screen immediately with proper stack management
-          console.log("🚀 Navigating to: /OrdersScreen after payment success");
+            Toast.show({
+              type: "success",
+              text1: "Payment Successful",
+              text2: `Order #${orderId} placed successfully!`,
+            });
 
-          // Use push to HomeScreen first, then push to OrdersScreen
-          // This creates the proper navigation stack: HomeScreen -> OrdersScreen
-          router.dismissAll();
-          router.push("/HomeScreen");
-          router.push("/OrdersScreen");
-
-          // Navigation happens immediately - no need for status messages
-          // The orders screen will show the updated orders
+            // Navigate to orders screen
+            router.dismissAll();
+            router.push("/HomeScreen");
+            router.push("/OrdersScreen");
+          } else {
+            Toast.show({
+              type: "error",
+              text1: "Order Failed",
+              text2: "Failed to create order. Please try again.",
+            });
+          }
         })
         .catch((error) => {
-          console.error("❌ Razorpay payment error:", error);
-
           const isCancelled =
             error.code === 0 || error.description?.includes("cancelled");
           const errorMessage = isCancelled
             ? "You cancelled the payment. You can try again anytime."
             : error.description || "Payment failed. Please try again.";
 
-          showNotification(errorMessage, isCancelled ? "info" : "error");
-
-          // Navigate back to cart page when payment fails/cancelled
-          setTimeout(() => router.push("/UserCartScreen"), 1500);
+          Toast.show({
+            type: isCancelled ? "info" : "error",
+            text1: isCancelled ? "Payment Cancelled" : "Payment Failed",
+            text2: errorMessage,
+          });
         });
     } catch (error) {
-      console.error("Error processing payment:", error);
-      showNotification(error.message || "Failed to process order", "error");
-
-      // Navigate back to cart on any error
-      setTimeout(() => router.push("/UserCartScreen"), 1500);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to process order",
+      });
     } finally {
       setProcessing(false);
     }
@@ -286,13 +241,6 @@ export default function PaymentScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
       </View>
-
-      {/* Custom Notification */}
-      <CustomNotification
-        message={notification.message}
-        type={notification.type}
-        visible={notification.visible}
-      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Restaurant Info */}
