@@ -393,12 +393,19 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F0F0F0",
   },
   backButton: {
-    marginRight: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F8F9FA",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
+    flex: 1,
     fontFamily: "Poppins-Bold",
-    fontSize: 18,
+    fontSize: 20,
     color: "#333",
+    textAlign: "center",
   },
   placeholder: {
     width: 40,

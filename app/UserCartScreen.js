@@ -263,6 +263,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     fontSize: 20,
     color: "#333333",
+    textAlign: "center",
   },
   placeholder: {
     width: 40,
