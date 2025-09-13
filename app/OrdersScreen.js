@@ -379,62 +379,20 @@ const OrdersScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.push("/HomeScreen")}
-              >
-                <MaterialCommunityIcons
-                  name="arrow-left"
-                  size={24}
-                  color="#374151"
-                />
-              </TouchableOpacity>
-              <View style={styles.headerTitleContainer}>
-                <Text
-                  style={[styles.headerTitle, { fontFamily: "Poppins-Bold" }]}
-                >
-                  {userRole === "staff" ? "All Orders" : "My Orders"}
-                </Text>
-                <Text
-                  style={[
-                    styles.headerSubtitle,
-                    { fontFamily: "Poppins-Regular" },
-                  ]}
-                >
-                  {filteredOrders.length}{" "}
-                  {filteredOrders.length === 1 ? "order" : "orders"} found
-                </Text>
-              </View>
-              <View style={styles.placeholder} />
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <MaterialCommunityIcons
-                name="magnify"
-                size={20}
-                color="#9CA3AF"
-              />
-              <TextInput
-                style={[styles.searchInput, { fontFamily: "Poppins-Regular" }]}
-                placeholder="Search by restaurant, item, or order ID..."
-                placeholderTextColor="#9CA3AF"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <MaterialCommunityIcons
-                    name="close-circle"
-                    size={20}
-                    color="#9CA3AF"
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push("/HomeScreen")}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="#333333"
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {userRole === "staff" ? "All Orders" : "My Orders"}
+          </Text>
+          <View style={styles.placeholder} />
         </View>
 
         {/* Orders List */}
@@ -690,48 +648,31 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
   header: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  headerContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-  },
-  headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#F8F9FA",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
   },
-  headerTitleContainer: {
+  headerTitle: {
     flex: 1,
+    textAlign: "center",
+    fontFamily: "Poppins-Bold",
+    fontSize: 20,
+    color: "#333333",
   },
   placeholder: {
     width: 40,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  headerSubtitle: {
-    color: "#6b7280",
-    marginTop: 4,
-    fontSize: 14,
   },
   searchContainer: {
     flexDirection: "row",

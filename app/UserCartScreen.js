@@ -158,18 +158,7 @@ const UserCartScreen = () => {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Cart</Text>
-        {cartItems.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={handleClearCart}
-          >
-            <MaterialCommunityIcons
-              name="delete-sweep"
-              size={24}
-              color="#FF4444"
-            />
-          </TouchableOpacity>
-        )}
+        <View style={styles.placeholder} />
       </View>
 
       {cartItems.length === 0 ? (
@@ -178,17 +167,11 @@ const UserCartScreen = () => {
         <>
           {/* Restaurant Info */}
           {restaurantInfo && (
-            <View className="bg-white mx-4 mt-4 rounded-xl p-4 shadow-sm border border-gray-100">
-              <Text
-                className="text-lg font-semibold text-gray-900"
-                style={{ fontFamily: "Poppins-Bold" }}
-              >
+            <View style={styles.restaurantInfo}>
+              <Text style={styles.restaurantName}>
                 Order from {restaurantInfo.name}
               </Text>
-              <Text
-                className="text-gray-600 text-sm"
-                style={{ fontFamily: "Poppins-Regular" }}
-              >
+              <Text style={styles.restaurantLocation}>
                 {restaurantInfo.location}
               </Text>
             </View>
@@ -274,7 +257,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
   },
   headerTitle: {
     flex: 1,
@@ -282,13 +264,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#333333",
   },
-  clearButton: {
+  placeholder: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFEBEE",
-    justifyContent: "center",
-    alignItems: "center",
   },
   listContainer: {
     paddingHorizontal: 20,
@@ -471,6 +448,31 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "Poppins-Bold",
+  },
+  restaurantInfo: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+  },
+  restaurantName: {
+    fontSize: 18,
+    fontFamily: "Poppins-Bold",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  restaurantLocation: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#6B7280",
   },
 });
 

@@ -20,6 +20,6 @@ export const RAZORPAY_CONFIG = {
   CURRENCY: "INR",
   COMPANY_NAME: "Aditya Foods",
   DESCRIPTION: "Aditya Foods Order Payment",
-  COMPANY_LOGO: "https://your-logo-url.com/logo.png", // Add your app logo URL
+  COMPANY_LOGO: "./assets/fonts/icon.png", // Add your app logo URL
   THEME_COLOR: "#FF6B00",
 };

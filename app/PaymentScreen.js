@@ -282,9 +282,10 @@ export default function PaymentScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
+        <View style={styles.placeholder} />
       </View>
 
       {/* Custom Notification */}
@@ -398,6 +399,9 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     fontSize: 18,
     color: "#333",
+  },
+  placeholder: {
+    width: 40,
   },
   content: {
     flex: 1,

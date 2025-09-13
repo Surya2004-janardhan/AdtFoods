@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -154,58 +155,44 @@ const UserFoodItemsScreen = () => {
     const isVeg = item.category?.toLowerCase().includes("veg") || item.isVeg;
 
     return (
-      <View className="bg-white rounded-2xl mx-4 mb-4 overflow-hidden shadow-sm border border-gray-100">
-        <View className="p-5">
+      <View style={styles.foodItem}>
+        <View style={styles.foodItemContent}>
           {/* Header Row */}
-          <View className="flex-row justify-between items-start mb-3">
-            <View className="flex-1 mr-4">
-              <View className="flex-row items-center mb-2">
+          <View style={styles.foodItemHeader}>
+            <View style={styles.foodItemLeft}>
+              <View style={styles.foodItemTitleRow}>
                 <View
-                  className={`w-4 h-4 rounded-sm mr-2 border-2 ${
-                    isVeg
-                      ? "bg-green-500 border-green-500"
-                      : "bg-red-500 border-red-500"
-                  }`}
+                  style={[
+                    styles.vegIndicator,
+                    isVeg ? styles.vegIndicatorVeg : styles.vegIndicatorNonVeg,
+                  ]}
                 >
                   <View
-                    className={`w-2 h-2 rounded-full m-auto ${
-                      isVeg ? "bg-green-600" : "bg-red-600"
-                    }`}
+                    style={[
+                      styles.vegIndicatorInner,
+                      isVeg
+                        ? styles.vegIndicatorInnerVeg
+                        : styles.vegIndicatorInnerNonVeg,
+                    ]}
                   />
                 </View>
-                <Text
-                  className="text-lg font-bold text-gray-900"
-                  style={{ fontFamily: "Poppins-Bold" }}
-                  numberOfLines={2}
-                >
+                <Text style={styles.foodItemName} numberOfLines={2}>
                   {item.name}
                 </Text>
               </View>
 
               {item.description && (
-                <Text
-                  className="text-gray-600 text-sm mb-3 leading-5"
-                  style={{ fontFamily: "Poppins-Regular" }}
-                  numberOfLines={2}
-                >
+                <Text style={styles.foodItemDescription} numberOfLines={2}>
                   {item.description}
                 </Text>
               )}
 
-              <View className="flex-row items-center justify-between">
-                <Text
-                  className="text-2xl font-bold text-orange-600"
-                  style={{ fontFamily: "Poppins-Bold" }}
-                >
-                  ₹{item.price}
-                </Text>
+              <View style={styles.foodItemBottom}>
+                <Text style={styles.foodItemPrice}>₹{item.price}</Text>
 
                 {item.category && (
-                  <View className="bg-gray-100 rounded-full px-3 py-1">
-                    <Text
-                      className="text-gray-700 text-xs font-medium"
-                      style={{ fontFamily: "Poppins-Medium" }}
-                    >
+                  <View style={styles.foodItemCategory}>
+                    <Text style={styles.foodItemCategoryText}>
                       {item.category}
                     </Text>
                   </View>
@@ -215,15 +202,20 @@ const UserFoodItemsScreen = () => {
 
             {/* Availability Badge */}
             <View
-              className={`rounded-full px-3 py-1 ${
-                item.available ? "bg-green-100" : "bg-red-100"
-              }`}
+              style={[
+                styles.availabilityBadge,
+                item.available
+                  ? styles.availabilityBadgeAvailable
+                  : styles.availabilityBadgeUnavailable,
+              ]}
             >
               <Text
-                className={`text-xs font-medium ${
-                  item.available ? "text-green-800" : "text-red-800"
-                }`}
-                style={{ fontFamily: "Poppins-Medium" }}
+                style={[
+                  styles.availabilityBadgeText,
+                  item.available
+                    ? styles.availabilityBadgeTextAvailable
+                    : styles.availabilityBadgeTextUnavailable,
+                ]}
               >
                 {item.available ? "Available" : "Out of Stock"}
               </Text>
@@ -232,26 +224,21 @@ const UserFoodItemsScreen = () => {
 
           {/* Add to Cart / Quantity Controls */}
           {item.available && (
-            <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <View style={styles.controlsContainer}>
               {quantity === 0 ? (
                 <TouchableOpacity
+                  style={styles.addToCartButton}
                   onPress={() => handleAddToCart(item)}
-                  className="flex-1 bg-orange-500 rounded-xl py-3 px-4 flex-row items-center justify-center"
                   activeOpacity={0.8}
                 >
                   <MaterialCommunityIcons name="plus" size={18} color="white" />
-                  <Text
-                    className="text-white font-bold ml-2"
-                    style={{ fontFamily: "Poppins-Bold" }}
-                  >
-                    Add to Cart
-                  </Text>
+                  <Text style={styles.addToCartButtonText}>Add to Cart</Text>
                 </TouchableOpacity>
               ) : (
-                <View className="flex-row items-center justify-between flex-1">
+                <View style={styles.quantityControls}>
                   <TouchableOpacity
+                    style={[styles.quantityButton, styles.quantityButtonMinus]}
                     onPress={() => handleQuantityChange(item, -1)}
-                    className="bg-orange-100 rounded-full p-2"
                     activeOpacity={0.7}
                   >
                     <MaterialCommunityIcons
@@ -261,18 +248,13 @@ const UserFoodItemsScreen = () => {
                     />
                   </TouchableOpacity>
 
-                  <View className="bg-orange-50 rounded-xl px-4 py-2 min-w-[80px] items-center">
-                    <Text
-                      className="text-orange-600 font-bold text-lg"
-                      style={{ fontFamily: "Poppins-Bold" }}
-                    >
-                      {quantity}
-                    </Text>
+                  <View style={styles.quantityDisplay}>
+                    <Text style={styles.quantityText}>{quantity}</Text>
                   </View>
 
                   <TouchableOpacity
+                    style={[styles.quantityButton, styles.quantityButtonPlus]}
                     onPress={() => handleQuantityChange(item, 1)}
-                    className="bg-orange-500 rounded-full p-2"
                     activeOpacity={0.7}
                   >
                     <MaterialCommunityIcons
@@ -287,12 +269,9 @@ const UserFoodItemsScreen = () => {
           )}
 
           {!item.available && (
-            <View className="mt-4 pt-4 border-t border-gray-100">
-              <View className="bg-gray-100 rounded-xl py-3 px-4 items-center">
-                <Text
-                  className="text-gray-500 font-medium"
-                  style={{ fontFamily: "Poppins-Medium" }}
-                >
+            <View style={styles.unavailableContainer}>
+              <View style={styles.unavailableText}>
+                <Text style={styles.unavailableText}>
                   Currently Unavailable
                 </Text>
               </View>
@@ -349,65 +328,43 @@ const UserFoodItemsScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
       {/* Header */}
-      <View className="bg-white shadow-sm border-b border-gray-100">
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="bg-gray-100 rounded-full p-2"
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color="#374151"
-            />
-          </TouchableOpacity>
-
-          <View className="flex-1 mx-4">
-            <Text
-              className="text-xl font-bold text-gray-900 text-center"
-              style={{ fontFamily: "Poppins-Bold" }}
-              numberOfLines={1}
-            >
-              {restaurantInfo?.name || restaurantName || "Menu"}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {restaurantInfo?.name || restaurantName || "Menu"}
+          </Text>
+          {restaurantInfo?.location && (
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {restaurantInfo.location}
             </Text>
-            {restaurantInfo?.location && (
-              <Text
-                className="text-gray-500 text-sm text-center mt-1"
-                style={{ fontFamily: "Poppins-Regular" }}
-                numberOfLines={1}
-              >
-                {restaurantInfo.location}
-              </Text>
-            )}
-          </View>
-
-          {/* Cart Icon */}
-          <TouchableOpacity
-            onPress={navigateToCart}
-            className="bg-orange-500 rounded-full p-2 relative"
-            activeOpacity={0.8}
-            disabled={!hasCartItems(restaurantId)}
-          >
-            <MaterialCommunityIcons
-              name="cart"
-              size={24}
-              color={
-                hasCartItems(restaurantId) ? "white" : "rgba(255,255,255,0.5)"
-              }
-            />
-            {hasCartItems(restaurantId) && (
-              <View className="absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[20px] h-5 items-center justify-center">
-                <Text
-                  className="text-white text-xs font-bold"
-                  style={{ fontFamily: "Poppins-Bold" }}
-                >
-                  {getCartCount(restaurantId)}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          )}
         </View>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={navigateToCart}
+          disabled={!hasCartItems(restaurantId)}
+        >
+          <MaterialCommunityIcons
+            name="cart"
+            size={24}
+            color={
+              hasCartItems(restaurantId) ? "white" : "rgba(255,255,255,0.5)"
+            }
+          />
+          {hasCartItems(restaurantId) && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>
+                {getCartCount(restaurantId)}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Menu Items */}
@@ -415,7 +372,7 @@ const UserFoodItemsScreen = () => {
         data={foodItems}
         renderItem={renderFoodItem}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={{ paddingVertical: 20 }}
+        contentContainerStyle={styles.menuContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -426,18 +383,10 @@ const UserFoodItemsScreen = () => {
           />
         }
         ListEmptyComponent={() => (
-          <View className="flex-1 justify-center items-center px-6 py-20">
+          <View style={styles.emptyContainer}>
             <MaterialCommunityIcons name="food-off" size={64} color="#9CA3AF" />
-            <Text
-              className="text-xl font-bold text-gray-900 mt-4 text-center"
-              style={{ fontFamily: "Poppins-Bold" }}
-            >
-              No Menu Items
-            </Text>
-            <Text
-              className="text-gray-500 mt-2 text-center leading-6"
-              style={{ fontFamily: "Poppins-Regular" }}
-            >
+            <Text style={styles.emptyTitle}>No Menu Items</Text>
+            <Text style={styles.emptySubtitle}>
               This restaurant hasn't added any menu items yet.
             </Text>
           </View>
@@ -446,26 +395,18 @@ const UserFoodItemsScreen = () => {
 
       {/* Floating Cart Button (when has items) */}
       {hasCartItems(restaurantId) && (
-        <View className="absolute bottom-6 left-6 right-6">
+        <View style={styles.floatingCartContainer}>
           <TouchableOpacity
+            style={styles.floatingCartButton}
             onPress={navigateToCart}
-            className="bg-orange-500 rounded-2xl py-4 px-6 flex-row items-center justify-between shadow-lg"
             activeOpacity={0.9}
           >
-            <View className="flex-row items-center">
+            <View style={styles.floatingCartLeft}>
               <MaterialCommunityIcons name="cart" size={24} color="white" />
-              <Text
-                className="text-white font-bold text-lg ml-3"
-                style={{ fontFamily: "Poppins-Bold" }}
-              >
-                View Cart
-              </Text>
+              <Text style={styles.floatingCartText}>View Cart</Text>
             </View>
-            <View className="flex-row items-center">
-              <Text
-                className="text-white font-bold text-lg mr-2"
-                style={{ fontFamily: "Poppins-Bold" }}
-              >
+            <View style={styles.floatingCartRight}>
+              <Text style={styles.floatingCartCount}>
                 {getCartCount(restaurantId)} items
               </Text>
               <MaterialCommunityIcons
@@ -480,5 +421,327 @@ const UserFoodItemsScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F8F9FA",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 20,
+    color: "#333333",
+    textAlign: "center",
+  },
+  headerSubtitle: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 2,
+  },
+  cartButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F97316",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#EF4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cartBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontFamily: "Poppins-Bold",
+  },
+  menuContainer: {
+    paddingVertical: 20,
+    paddingBottom: 120,
+  },
+  foodItem: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
+  },
+  foodItemContent: {
+    padding: 20,
+  },
+  foodItemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  foodItemLeft: {
+    flex: 1,
+    marginRight: 16,
+  },
+  foodItemTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  vegIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 2,
+    borderWidth: 2,
+    marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  vegIndicatorVeg: {
+    backgroundColor: "#10B981",
+    borderColor: "#10B981",
+  },
+  vegIndicatorNonVeg: {
+    backgroundColor: "#EF4444",
+    borderColor: "#EF4444",
+  },
+  vegIndicatorInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  vegIndicatorInnerVeg: {
+    backgroundColor: "#059669",
+  },
+  vegIndicatorInnerNonVeg: {
+    backgroundColor: "#DC2626",
+  },
+  foodItemName: {
+    fontSize: 18,
+    fontFamily: "Poppins-Bold",
+    color: "#111827",
+    flex: 1,
+  },
+  foodItemDescription: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#6B7280",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  foodItemBottom: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  foodItemPrice: {
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    color: "#F97316",
+  },
+  foodItemCategory: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 50,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  foodItemCategoryText: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+    color: "#374151",
+  },
+  availabilityBadge: {
+    borderRadius: 50,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  availabilityBadgeAvailable: {
+    backgroundColor: "#D1FAE5",
+  },
+  availabilityBadgeUnavailable: {
+    backgroundColor: "#FEE2E2",
+  },
+  availabilityBadgeText: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+  },
+  availabilityBadgeTextAvailable: {
+    color: "#065F46",
+  },
+  availabilityBadgeTextUnavailable: {
+    color: "#991B1B",
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  addToCartButton: {
+    flex: 1,
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addToCartButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+    marginLeft: 8,
+  },
+  quantityControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
+  },
+  quantityButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityButtonMinus: {
+    backgroundColor: "#FED7AA",
+  },
+  quantityButtonPlus: {
+    backgroundColor: "#F97316",
+  },
+  quantityDisplay: {
+    backgroundColor: "#FFF7ED",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minWidth: 60,
+    alignItems: "center",
+  },
+  quantityText: {
+    fontSize: 18,
+    fontFamily: "Poppins-Bold",
+    color: "#F97316",
+  },
+  unavailableContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  unavailableText: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    textAlign: "center",
+    color: "#6B7280",
+    fontSize: 16,
+    fontFamily: "Poppins-Medium",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 80,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontFamily: "Poppins-Bold",
+    color: "#111827",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  floatingCartContainer: {
+    position: "absolute",
+    bottom: 24,
+    left: 24,
+    right: 24,
+  },
+  floatingCartButton: {
+    backgroundColor: "#F97316",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#F97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingCartLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  floatingCartText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Poppins-Bold",
+    marginLeft: 12,
+  },
+  floatingCartRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  floatingCartCount: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins-Bold",
+    marginRight: 8,
+  },
+});
 
 export default UserFoodItemsScreen;
