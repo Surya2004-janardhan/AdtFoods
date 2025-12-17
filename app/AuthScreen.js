@@ -109,8 +109,21 @@ const AuthScreen = () => {
   };
 
   const handleLogin = async () => {
+    // Check if all fields are filled
     if (!userId || !password) {
       showNotification("Please fill in all required fields", "error");
+      return;
+    }
+
+    // Validate user ID format
+    if (userId.trim().length < 3) {
+      showNotification("User ID must be at least 3 characters", "error");
+      return;
+    }
+
+    // Validate password
+    if (password.length < 6) {
+      showNotification("Password must be at least 6 characters", "error");
       return;
     }
 
@@ -139,9 +152,62 @@ const AuthScreen = () => {
     }
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
+
+  const validateUserId = (userId) => {
+    const userIdRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    return userIdRegex.test(userId);
+  };
+
   const handleSignup = async () => {
+    // Check if all fields are filled
     if (!name || !email || !phoneNumber || !userId || !password) {
       showNotification("Please fill in all required fields", "error");
+      return;
+    }
+
+    // Validate name
+    if (name.trim().length < 2) {
+      showNotification("Name must be at least 2 characters long", "error");
+      return;
+    }
+
+    // Validate email
+    if (!validateEmail(email)) {
+      showNotification("Please enter a valid email address", "error");
+      return;
+    }
+
+    // Validate phone number
+    if (!validatePhoneNumber(phoneNumber)) {
+      showNotification("Please enter a valid 10-digit phone number", "error");
+      return;
+    }
+
+    // Validate user ID
+    if (!validateUserId(userId)) {
+      showNotification(
+        "User ID must be 3-20 characters (letters, numbers, underscore only)",
+        "error"
+      );
+      return;
+    }
+
+    // Validate password
+    if (!validatePassword(password)) {
+      showNotification("Password must be at least 6 characters long", "error");
       return;
     }
 
@@ -149,8 +215,8 @@ const AuthScreen = () => {
     try {
       const userData = {
         user_id: userId,
-        name: name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         phone_number: phoneNumber,
         password,
       };
