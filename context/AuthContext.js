@@ -14,57 +14,78 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadAuthState = async () => {
       try {
-        const [storedUser, storedToken] = await Promise.all([
+        const [storedUser, storedToken, storedExpiry] = await Promise.all([
           AsyncStorage.getItem("userProfile"),
           AsyncStorage.getItem("authToken"),
+          AsyncStorage.getItem("tokenExpiry"),
         ]);
 
         if (storedUser && storedToken) {
-          console.log("Found stored auth data, verifying token...");
+          // Check token expiry first (client-side validation)
+          if (storedExpiry) {
+            const expiryTime = parseInt(storedExpiry, 10);
+            const currentTime = Date.now();
 
-          // Set the token in axios headers for verification
+            if (currentTime > expiryTime) {
+              console.log("Token expired, clearing auth data");
+              await clearAuthData();
+              setLoading(false);
+              return;
+            }
+          }
+
+          console.log("Found valid stored auth data");
+
+          // Parse and set user data immediately (optimistic approach)
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setToken(storedToken);
+
+          // Set the token in axios headers
           axios.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${storedToken}`;
 
-          // Verify token with backend
-          try {
-            const response = await axios.get("/verify");
+          // Mark loading as false immediately for faster UI
+          setLoading(false);
 
-            if (response.data.success) {
-              console.log("Token verified successfully");
-              // Update user data from backend response
-              setUser(response.data.user);
-              setToken(storedToken);
-
-              // Store updated user data
-              await AsyncStorage.setItem(
-                "userProfile",
-                JSON.stringify(response.data.user)
+          // Verify token with backend in background (non-blocking)
+          axios
+            .get("/verify")
+            .then((response) => {
+              if (response.data.success) {
+                console.log("Token verified successfully in background");
+                // Update user data from backend if changed
+                setUser(response.data.user);
+                AsyncStorage.setItem(
+                  "userProfile",
+                  JSON.stringify(response.data.user)
+                );
+              } else {
+                console.log("Background token verification failed");
+                clearAuthData();
+              }
+            })
+            .catch((error) => {
+              console.log(
+                "Background token verification error:",
+                error.message
               );
-              await AsyncStorage.setItem(
-                "userRole",
-                response.data.isStaff ? "staff" : "user"
-              );
-              await AsyncStorage.setItem("userId", response.data.user.user_id);
-            } else {
-              console.log("Token verification failed, clearing auth data");
-              await clearAuthData();
-            }
-          } catch (error) {
-            console.log(
-              "Token verification failed:",
-              error.response?.data || error.message
-            );
-            await clearAuthData();
-          }
+              // Only clear if it's an authentication error
+              if (
+                error.response?.status === 401 ||
+                error.response?.status === 403
+              ) {
+                clearAuthData();
+              }
+            });
         } else {
           console.log("No stored auth data found");
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error loading authentication state:", error);
         await clearAuthData();
-      } finally {
         setLoading(false);
       }
     };
@@ -80,6 +101,7 @@ export const AuthProvider = ({ children }) => {
         "authToken",
         "userId",
         "userRole",
+        "tokenExpiry",
       ]);
       setUser(null);
       setToken(null);
@@ -115,14 +137,20 @@ export const AuthProvider = ({ children }) => {
         const userData = response.data.user;
         const authToken = response.data.token;
 
-        // Store user data and token
-        await AsyncStorage.setItem("userProfile", JSON.stringify(userData));
-        await AsyncStorage.setItem("authToken", authToken);
-        await AsyncStorage.setItem("userId", userData.user_id);
-        await AsyncStorage.setItem(
-          "userRole",
-          userData.user_id === "1" ? "staff" : "user"
-        );
+        // Calculate token expiry (30 days from now)
+        const expiryTime = Date.now() + 30 * 24 * 60 * 60 * 1000;
+
+        // Store all data in parallel for faster login
+        await Promise.all([
+          AsyncStorage.setItem("userProfile", JSON.stringify(userData)),
+          AsyncStorage.setItem("authToken", authToken),
+          AsyncStorage.setItem("userId", userData.user_id),
+          AsyncStorage.setItem("tokenExpiry", expiryTime.toString()),
+          AsyncStorage.setItem(
+            "userRole",
+            userData.user_id === "1" ? "staff" : "user"
+          ),
+        ]);
 
         // Update state
         setUser(userData);
