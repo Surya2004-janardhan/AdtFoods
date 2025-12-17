@@ -122,13 +122,49 @@ export const FoodProvider = ({ children }) => {
     }
   };
 
-  // Get food items by restaurant ID
-  const getFoodItemsByRestaurant = async (restaurantId) => {
+  // Get food items by restaurant ID with caching
+  const getFoodItemsByRestaurant = async (
+    restaurantId,
+    forceRefresh = false
+  ) => {
+    const MENU_CACHE_KEY = `menu_${restaurantId}`;
+    const MENU_CACHE_TIMESTAMP_KEY = `menu_${restaurantId}_timestamp`;
+
     try {
+      // Check cache first if not forcing refresh
+      if (!forceRefresh) {
+        const [cachedMenu, cachedTimestamp] = await Promise.all([
+          AsyncStorage.getItem(MENU_CACHE_KEY),
+          AsyncStorage.getItem(MENU_CACHE_TIMESTAMP_KEY),
+        ]);
+
+        if (cachedMenu && cachedTimestamp) {
+          const timestamp = parseInt(cachedTimestamp);
+          if (isCacheValid(timestamp)) {
+            const parsedData = JSON.parse(cachedMenu);
+            return { success: true, data: parsedData, fromCache: true };
+          }
+        }
+      }
+
+      // Fetch from API
       const response = await axios.get(`/restaurants/${restaurantId}/menu`);
-      // Handle both old format (array) and new format (object with data array)
       const foodData = response.data.data || response.data;
-      return { success: true, data: foodData };
+
+      // Ensure availability is properly set from DB
+      const menuItems = foodData.map((item) => ({
+        ...item,
+        available: item.available !== undefined ? item.available : true,
+      }));
+
+      // Save to cache with timestamp
+      const timestamp = Date.now().toString();
+      await Promise.all([
+        AsyncStorage.setItem(MENU_CACHE_KEY, JSON.stringify(menuItems)),
+        AsyncStorage.setItem(MENU_CACHE_TIMESTAMP_KEY, timestamp),
+      ]);
+
+      return { success: true, data: menuItems, fromCache: false };
     } catch (error) {
       console.error("Error fetching restaurant food items:", error);
       return {
@@ -165,6 +201,21 @@ export const FoodProvider = ({ children }) => {
             item._id === itemId ? { ...item, available } : item
           )
         );
+
+        // Invalidate menu cache for all restaurants to ensure fresh data
+        const keys = await AsyncStorage.getAllKeys();
+        const menuCacheKeys = keys.filter(
+          (key) => key.startsWith("menu_") && key.endsWith("_timestamp")
+        );
+        if (menuCacheKeys.length > 0) {
+          await AsyncStorage.multiRemove(menuCacheKeys);
+          // Also remove the actual cache data
+          const menuDataKeys = menuCacheKeys.map((key) =>
+            key.replace("_timestamp", "")
+          );
+          await AsyncStorage.multiRemove(menuDataKeys);
+        }
+
         return { success: true };
       }
       return { success: false, error: "Failed to update item availability" };
