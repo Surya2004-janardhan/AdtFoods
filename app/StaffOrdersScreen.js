@@ -371,9 +371,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
+    minHeight: 72,
   },
   headerTitle: {
-    fontFamily: "PlayfairDisplay-Bold",
+    fontFamily: "Poppins-Bold",
     fontSize: 20,
     color: "#333333",
   },
