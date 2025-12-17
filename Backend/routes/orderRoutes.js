@@ -4,6 +4,7 @@ const orderController = require("../controllers/orderController");
 const { auth } = require("../middleware/auth");
 const validateRequest =
   require("../middleware/validateRequest").validateRequest;
+const { cacheMiddleware, clearCache } = require("../middleware/cache");
 
 // Create order schema
 const createOrderSchema = {
@@ -32,19 +33,39 @@ const updateOrderStatusSchema = {
 };
 
 // Order routes
-router.get("/orders/count", auth, orderController.getTotalOrderCount);
-router.get("/orders", auth, orderController.getAllOrders);
-router.get("/orders/:userId", auth, orderController.getOrdersByUserId);
+router.get(
+  "/orders/count",
+  auth,
+  cacheMiddleware("orders-count", 60),
+  orderController.getTotalOrderCount
+);
+router.get(
+  "/orders",
+  auth,
+  cacheMiddleware("orders", 30),
+  orderController.getAllOrders
+);
+router.get(
+  "/orders/:userId",
+  auth,
+  cacheMiddleware("user-orders", 30),
+  orderController.getOrdersByUserId
+);
 router.post(
   "/orders",
   auth,
   validateRequest(createOrderSchema),
+  clearCache("orders:*"),
+  clearCache("orders-count:*"),
+  clearCache("user-orders:*"),
   orderController.createOrder
 );
 router.put(
   "/orders/:id/status",
   auth,
   validateRequest(updateOrderStatusSchema),
+  clearCache("orders:*"),
+  clearCache("user-orders:*"),
   orderController.updateOrderStatus
 );
 

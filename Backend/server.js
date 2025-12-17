@@ -16,6 +16,7 @@ const notFoundHandler = require("./middleware/notFoundHandler");
 
 // Import configuration
 const connectDB = require("./config/database");
+const { connectRedis } = require("./config/redis");
 // const { MONGO_URI } = require("./config/constants");
 
 // Load environment variables
@@ -24,6 +25,7 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 connectDB();
+connectRedis();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
