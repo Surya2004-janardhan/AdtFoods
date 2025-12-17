@@ -43,6 +43,60 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to AdtFoods API" });
 });
 
+// Health check API
+app.get("/health", (req, res) => {
+  const healthInfo = {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+    server: {
+      node_version: process.version,
+      platform: process.platform,
+      memory: {
+        total:
+          Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + " MB",
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + " MB",
+        free:
+          Math.round(
+            (process.memoryUsage().heapTotal - process.memoryUsage().heapUsed) /
+              1024 /
+              1024
+          ) + " MB",
+      },
+    },
+    database: {
+      mongodb:
+        mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      name: mongoose.connection.name || "N/A",
+    },
+    cache: {
+      redis: require("./config/redis").isRedisAvailable()
+        ? "connected"
+        : "not configured",
+    },
+    request: {
+      method: req.method,
+      url: req.url,
+      baseUrl: req.baseUrl,
+      originalUrl: req.originalUrl,
+      protocol: req.protocol,
+      secure: req.secure,
+      ip: req.ip || req.connection.remoteAddress,
+      ips: req.ips,
+      hostname: req.hostname,
+      headers: req.headers,
+      query: req.query,
+      params: req.params,
+      cookies: req.cookies || {},
+      httpVersion: req.httpVersion,
+      userAgent: req.get("user-agent"),
+    },
+  };
+
+  res.json(healthInfo);
+});
+
 // 404 handler
 app.use(notFoundHandler.notFoundHandler);
 
