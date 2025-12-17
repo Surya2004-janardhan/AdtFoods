@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
+    minHeight: 72,
   },
   backButton: {
     width: 40,
