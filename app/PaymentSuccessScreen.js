@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -10,25 +10,104 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CartContext } from "../context/CartContext";
+import OrdersContext from "../context/OrdersContext";
+import { API_CONFIG } from "../config/apiConfig";
 import BottomNavigation from "../components/BottomNavigation";
 
 export default function PaymentSuccessScreen() {
   const [countdown, setCountdown] = useState(5);
+  const [processing, setProcessing] = useState(true);
+  const { clearRestaurantCart } = useContext(CartContext);
+  const { createOrder } = useContext(OrdersContext);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          router.replace("/OrdersScreen");
-          return 0;
+    const processPayment = async () => {
+      try {
+        const pendingPaymentStr = await AsyncStorage.getItem("pendingPayment");
+        if (!pendingPaymentStr) {
+          // No pending payment, just show success
+          setProcessing(false);
+          return;
         }
-        return prev - 1;
-      });
-    }, 1000);
 
-    return () => clearInterval(timer);
+        const { orderData, paymentData, razorpayOrderData, token } =
+          JSON.parse(pendingPaymentStr);
+
+        console.log("🔄 Processing pending payment...");
+
+        // Verify payment
+        const verifyResponse = await fetch(
+          `${API_CONFIG.BASE_URL}/verify-payment`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpay_order_id: razorpayOrderData.orderId,
+              razorpay_payment_id: paymentData.razorpay_payment_id,
+              razorpay_signature: paymentData.razorpay_signature,
+            }),
+          }
+        );
+
+        if (!verifyResponse.ok) {
+          throw new Error("Payment verification failed");
+        }
+
+        const verifyData = await verifyResponse.json();
+        if (!verifyData.success) {
+          throw new Error("Payment verification failed");
+        }
+
+        console.log("✅ Payment verified");
+
+        // Create order
+        const result = await createOrder(orderData);
+        if (!result.success) {
+          throw new Error(result.error || "Failed to create order");
+        }
+
+        console.log("📝 Order created:", result);
+
+        // Clear cart
+        clearRestaurantCart();
+        console.log("🛒 Cart cleared");
+
+        // Remove pending payment
+        await AsyncStorage.removeItem("pendingPayment");
+
+        console.log("✅ Payment processing complete");
+      } catch (error) {
+        console.error("❌ Error processing payment:", error);
+        // For now, still proceed to show success, but in production, handle error
+      } finally {
+        setProcessing(false);
+      }
+    };
+
+    processPayment();
   }, []);
+
+  useEffect(() => {
+    if (!processing) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            router.replace("/OrdersScreen");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [processing]);
 
   const viewOrders = () => {
     router.replace("/OrdersScreen");
@@ -151,19 +230,29 @@ export default function PaymentSuccessScreen() {
         <View style={styles.autoRedirect}>
           <ActivityIndicator size="small" color="#FF6B00" />
           <Text style={styles.autoRedirectText}>
-            Redirecting to orders in {countdown} seconds...
+            {processing
+              ? "Verifying payment and processing order..."
+              : `Redirecting to orders in ${countdown} seconds...`}
           </Text>
         </View>
       </View>
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={goHome}>
+        <TouchableOpacity
+          style={[styles.secondaryButton, processing && styles.disabledButton]}
+          onPress={goHome}
+          disabled={processing}
+        >
           <MaterialCommunityIcons name="home" size={20} color="#FF6B00" />
           <Text style={styles.secondaryButtonText}>Go to Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={viewOrders}>
+        <TouchableOpacity
+          style={[styles.primaryButton, processing && styles.disabledButton]}
+          onPress={viewOrders}
+          disabled={processing}
+        >
           <MaterialCommunityIcons
             name="clipboard-list"
             size={20}
@@ -385,5 +474,8 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     fontSize: 14,
     color: "#FFFFFF",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

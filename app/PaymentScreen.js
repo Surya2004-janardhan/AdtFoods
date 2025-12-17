@@ -188,7 +188,7 @@ export default function PaymentScreen() {
         .then(async (paymentData) => {
           console.log("✅ Razorpay payment success:", paymentData);
 
-          // Create order in database after successful payment
+          // Prepare order data
           const orderData = {
             userId: userId,
             name: userName,
@@ -206,33 +206,25 @@ export default function PaymentScreen() {
             restaurantLocation: restaurantInfo?.location || "Unknown Location",
             razorpayOrderId: razorpayOrderData.orderId,
             razorpayPaymentId: paymentData.razorpay_payment_id,
+            razorpaySignature: paymentData.razorpay_signature,
             note: "Online Payment via Razorpay",
           };
 
-          console.log("📋 Creating order with data:", orderData);
-          console.log("🔍 Restaurant ID validation:", {
-            currentRestaurantId,
-            isString: typeof currentRestaurantId,
-            length: currentRestaurantId?.length,
-          });
-          const result = await createOrder(orderData);
-          console.log("📝 Order creation result:", result);
+          // Store pending payment data
+          await AsyncStorage.setItem(
+            "pendingPayment",
+            JSON.stringify({
+              orderData,
+              paymentData,
+              razorpayOrderData,
+              token,
+            })
+          );
 
-          // Clear cart immediately after payment success
-          clearRestaurantCart();
-          console.log("🛒 Cart cleared successfully");
+          console.log("💾 Stored pending payment data");
 
-          // Navigate to orders screen immediately with proper stack management
-          console.log("🚀 Navigating to: /OrdersScreen after payment success");
-
-          // Use push to HomeScreen first, then push to OrdersScreen
-          // This creates the proper navigation stack: HomeScreen -> OrdersScreen
-          router.dismissAll();
-          router.push("/HomeScreen");
-          router.push("/OrdersScreen");
-
-          // Navigation happens immediately - no need for status messages
-          // The orders screen will show the updated orders
+          // Navigate to payment success screen
+          router.push("/PaymentSuccessScreen");
         })
         .catch((error) => {
           console.error("❌ Razorpay payment error:", error);
