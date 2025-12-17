@@ -98,7 +98,7 @@ export default function PaymentSuccessScreen() {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            router.replace("/OrdersScreen");
+            router.replace("/HomeScreen");
             return 0;
           }
           return prev - 1;

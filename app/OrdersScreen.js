@@ -381,7 +381,7 @@ const OrdersScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.push("/HomeScreen")}
+            onPress={() => router.replace("/HomeScreen")}
           >
             <MaterialCommunityIcons
               name="arrow-left"
