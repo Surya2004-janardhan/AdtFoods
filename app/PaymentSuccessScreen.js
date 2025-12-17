@@ -17,8 +17,8 @@ import { API_CONFIG } from "../config/apiConfig";
 import BottomNavigation from "../components/BottomNavigation";
 
 export default function PaymentSuccessScreen() {
-  const [countdown, setCountdown] = useState(5);
   const [processing, setProcessing] = useState(true);
+  const [orderCreated, setOrderCreated] = useState(false);
   const { clearRestaurantCart } = useContext(CartContext);
   const { createOrder } = useContext(OrdersContext);
 
@@ -72,6 +72,7 @@ export default function PaymentSuccessScreen() {
         }
 
         console.log("📝 Order created:", result);
+        setOrderCreated(true);
 
         // Clear cart
         clearRestaurantCart();
@@ -92,29 +93,16 @@ export default function PaymentSuccessScreen() {
     processPayment();
   }, []);
 
+  // Handle back button - prevent going back if order is created
   useEffect(() => {
-    if (!processing) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            router.replace("/HomeScreen");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
+    if (orderCreated) {
+      // Order is created, user can safely navigate away
+      return;
     }
-  }, [processing]);
+  }, [orderCreated]);
 
   const viewOrders = () => {
     router.replace("/OrdersScreen");
-  };
-
-  const goHome = () => {
-    router.replace("/HomeScreen");
   };
 
   return (
@@ -226,41 +214,33 @@ export default function PaymentSuccessScreen() {
           </Text>
         </View>
 
-        {/* Auto Redirect Info */}
-        <View style={styles.autoRedirect}>
-          <ActivityIndicator size="small" color="#FF6B00" />
-          <Text style={styles.autoRedirectText}>
-            {processing
-              ? "Verifying payment and processing order..."
-              : `Redirecting to orders in ${countdown} seconds...`}
-          </Text>
+        {/* Processing Info */}
+        {processing && (
+          <View style={styles.processingInfo}>
+            <ActivityIndicator size="small" color="#FF6B00" />
+            <Text style={styles.processingText}>
+              Verifying payment and creating order...
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Action Button */}
+      {!processing && (
+        <View style={styles.actionButtonContainer}>
+          <TouchableOpacity
+            style={styles.viewOrdersButton}
+            onPress={viewOrders}
+          >
+            <MaterialCommunityIcons
+              name="clipboard-list"
+              size={18}
+              color="#FFFFFF"
+            />
+            <Text style={styles.viewOrdersButtonText}>View Orders</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.secondaryButton, processing && styles.disabledButton]}
-          onPress={goHome}
-          disabled={processing}
-        >
-          <MaterialCommunityIcons name="home" size={20} color="#FF6B00" />
-          <Text style={styles.secondaryButtonText}>Go to Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.primaryButton, processing && styles.disabledButton]}
-          onPress={viewOrders}
-          disabled={processing}
-        >
-          <MaterialCommunityIcons
-            name="clipboard-list"
-            size={20}
-            color="#FFFFFF"
-          />
-          <Text style={styles.primaryButtonText}>View Orders</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* Bottom Navigation */}
       <BottomNavigation />
@@ -418,64 +398,38 @@ const styles = StyleSheet.create({
     color: "#666666",
     textAlign: "center",
   },
-  autoRedirect: {
+  processingInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginBottom: 32,
   },
-  autoRedirectText: {
+  processingText: {
     fontFamily: "Poppins-Bold",
     fontSize: 14,
     color: "#333333",
   },
-  actionButtons: {
-    flexDirection: "row",
+  actionButtonContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
-    gap: 12,
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#F0F0F0",
   },
-  secondaryButton: {
-    flex: 1,
+  viewOrdersButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: "#FFF8F0",
-    borderWidth: 1,
-    borderColor: "#FF6B00",
-    gap: 8,
-  },
-  secondaryButtonText: {
-    fontFamily: "Poppins-Bold",
-    fontSize: 14,
-    color: "#FF6B00",
-  },
-  primaryButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     backgroundColor: "#FF6B00",
-    gap: 8,
-    shadowColor: "#FF6B00",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    gap: 6,
   },
-  primaryButtonText: {
+  viewOrdersButtonText: {
     fontFamily: "Poppins-Bold",
-    fontSize: 14,
+    fontSize: 13,
     color: "#FFFFFF",
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
 });
