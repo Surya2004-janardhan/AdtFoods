@@ -1,0 +1,32 @@
+# Backend files
+
+Backend/
+
+# Node modules (already handled by .gitignore but explicit here)
+
+node_modules/
+
+# Build artifacts
+
+android/.gradle/
+android/app/build/
+android/build/
+
+# Documentation
+
+\*.md
+!README.md
+
+# Logs
+
+\*.log
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db

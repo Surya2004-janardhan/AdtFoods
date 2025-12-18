@@ -97,7 +97,7 @@ export default function IndexScreen() {
         <View style={{ alignItems: "center", marginBottom: 32 }}>
           {/* Custom Logo Image */}
           <Image
-            source={require("../assets/fonts/icon.png")}
+            source={require("../assets/icon.png")}
             style={{
               width: 120,
               height: 120,

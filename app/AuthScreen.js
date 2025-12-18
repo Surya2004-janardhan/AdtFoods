@@ -279,7 +279,7 @@ const AuthScreen = () => {
           <View className="items-center mb-6">
             {/* Custom Logo Image */}
             <Image
-              source={require("../assets/fonts/icon.png")}
+              source={require("../assets/icon.png")}
               style={{
                 width: 80,
                 height: 80,
