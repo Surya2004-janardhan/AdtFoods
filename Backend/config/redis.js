@@ -7,12 +7,8 @@ let redisClient = null;
 let isRedisConnected = false;
 
 const connectRedis = async () => {
-  // Skip Redis in development if not configured
-  if (
-    process.env.NODE_ENV !== "production" &&
-    !process.env.REDIS_URL &&
-    !process.env.REDIS_HOST
-  ) {
+  // Redis must be configured to connect
+  if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
     console.log("⚠️  Redis not configured - running without cache");
     return null;
   }

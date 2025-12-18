@@ -1,4 +1,4 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CartContext = createContext();
@@ -7,6 +7,55 @@ export const CartProvider = ({ children }) => {
   // Store carts by restaurant ID: { restaurantId: { items: [], restaurantInfo: {} } }
   const [restaurantCarts, setRestaurantCarts] = useState({});
   const [currentRestaurantId, setCurrentRestaurantId] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const CART_STORAGE_KEY = "restaurant_carts_session";
+  const CURRENT_RESTAURANT_KEY = "current_restaurant_session";
+
+  // Load cart from AsyncStorage on mount
+  useEffect(() => {
+    loadCartFromStorage();
+  }, []);
+
+  // Save cart to AsyncStorage whenever it changes
+  useEffect(() => {
+    if (isLoaded) {
+      saveCartToStorage();
+    }
+  }, [restaurantCarts, currentRestaurantId, isLoaded]);
+
+  const loadCartFromStorage = async () => {
+    try {
+      const [savedCarts, savedRestaurantId] = await Promise.all([
+        AsyncStorage.getItem(CART_STORAGE_KEY),
+        AsyncStorage.getItem(CURRENT_RESTAURANT_KEY),
+      ]);
+
+      if (savedCarts) {
+        setRestaurantCarts(JSON.parse(savedCarts));
+      }
+      if (savedRestaurantId) {
+        setCurrentRestaurantId(savedRestaurantId);
+      }
+    } catch (error) {
+      console.error("Error loading cart from storage:", error);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  const saveCartToStorage = async () => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(restaurantCarts)),
+        currentRestaurantId
+          ? AsyncStorage.setItem(CURRENT_RESTAURANT_KEY, currentRestaurantId)
+          : AsyncStorage.removeItem(CURRENT_RESTAURANT_KEY),
+      ]);
+    } catch (error) {
+      console.error("Error saving cart to storage:", error);
+    }
+  };
 
   // Get cart items for current restaurant
   const getCartItems = (restaurantId = currentRestaurantId) => {
@@ -149,7 +198,7 @@ export const CartProvider = ({ children }) => {
   };
 
   // Clear cart for specific restaurant
-  const clearRestaurantCart = (restaurantId = currentRestaurantId) => {
+  const clearRestaurantCart = async (restaurantId = currentRestaurantId) => {
     if (!restaurantId) return;
 
     setRestaurantCarts((prev) => ({
@@ -159,12 +208,23 @@ export const CartProvider = ({ children }) => {
         items: [],
       },
     }));
+
+    await saveCartToStorage();
   };
 
   // Clear all carts
-  const clearAllCarts = () => {
+  const clearAllCarts = async () => {
     setRestaurantCarts({});
     setCurrentRestaurantId(null);
+
+    try {
+      await AsyncStorage.multiRemove([
+        CART_STORAGE_KEY,
+        CURRENT_RESTAURANT_KEY,
+      ]);
+    } catch (error) {
+      console.error("Error clearing cart storage:", error);
+    }
   };
 
   // Get cart count for current restaurant

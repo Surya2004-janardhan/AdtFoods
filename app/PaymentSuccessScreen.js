@@ -102,7 +102,11 @@ export default function PaymentSuccessScreen() {
   }, [orderCreated]);
 
   const viewOrders = () => {
-    router.replace("/OrdersScreen");
+    // First navigate to Home to reset the stack, then to Orders
+    router.replace("/HomeScreen");
+    setTimeout(() => {
+      router.push("/OrdersScreen");
+    }, 100);
   };
 
   return (

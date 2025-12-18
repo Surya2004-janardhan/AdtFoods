@@ -116,8 +116,8 @@ const AuthScreen = () => {
     }
 
     // Validate user ID format
-    if (userId.trim().length < 3) {
-      showNotification("User ID must be at least 3 characters", "error");
+    if (userId.trim().length !== 10) {
+      showNotification("User ID must be exactly 10 characters", "error");
       return;
     }
 
@@ -167,7 +167,7 @@ const AuthScreen = () => {
   };
 
   const validateUserId = (userId) => {
-    const userIdRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const userIdRegex = /^[a-zA-Z0-9_]{10}$/;
     return userIdRegex.test(userId);
   };
 
@@ -179,8 +179,8 @@ const AuthScreen = () => {
     }
 
     // Validate name
-    if (name.trim().length < 2) {
-      showNotification("Name must be at least 2 characters long", "error");
+    if (name.trim().length < 5) {
+      showNotification("Name must be at least 5 characters long", "error");
       return;
     }
 
@@ -199,7 +199,7 @@ const AuthScreen = () => {
     // Validate user ID
     if (!validateUserId(userId)) {
       showNotification(
-        "User ID must be 3-20 characters (letters, numbers, underscore only)",
+        "User ID must be exactly 10 characters (letters, numbers, underscore only)",
         "error"
       );
       return;

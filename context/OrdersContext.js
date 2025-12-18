@@ -8,13 +8,88 @@ export const OrdersProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch all orders (for staff)
-  const fetchAllOrders = async () => {
+  // Cache configuration
+  const CACHE_DURATION = 30 * 1000; // 30 seconds (orders update frequently)
+  const ORDERS_CACHE_KEY = "orders_cache";
+  const ORDERS_CACHE_TIMESTAMP_KEY = "orders_cache_timestamp";
+
+  // Check if cached data is still valid
+  const isCacheValid = (timestamp) => {
+    const now = Date.now();
+    return now - timestamp < CACHE_DURATION;
+  };
+
+  // Load cached orders
+  const loadCachedOrders = async (cacheKey) => {
     try {
+      const cachedData = await AsyncStorage.getItem(cacheKey);
+      const cachedTimestamp = await AsyncStorage.getItem(
+        `${cacheKey}_timestamp`
+      );
+
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp);
+        if (isCacheValid(timestamp)) {
+          return {
+            success: true,
+            data: JSON.parse(cachedData),
+            fromCache: true,
+          };
+        }
+      }
+      return { success: false, fromCache: false };
+    } catch (error) {
+      console.error("Error loading cached orders:", error);
+      return { success: false, fromCache: false };
+    }
+  };
+
+  // Save orders to cache
+  const saveOrdersToCache = async (cacheKey, data) => {
+    try {
+      const timestamp = Date.now().toString();
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+      await AsyncStorage.setItem(`${cacheKey}_timestamp`, timestamp);
+    } catch (error) {
+      console.error("Error saving orders to cache:", error);
+    }
+  };
+
+  // Clear orders cache
+  const clearOrdersCache = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const orderCacheKeys = keys.filter(
+        (key) => key.startsWith("orders_") || key.startsWith("user_orders_")
+      );
+      if (orderCacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(orderCacheKeys);
+      }
+    } catch (error) {
+      console.error("Error clearing orders cache:", error);
+    }
+  };
+
+  // Fetch all orders (for staff)
+  const fetchAllOrders = async (forceRefresh = false) => {
+    try {
+      // Check cache first
+      if (!forceRefresh) {
+        const cacheResult = await loadCachedOrders(ORDERS_CACHE_KEY);
+        if (cacheResult.success) {
+          setOrders(cacheResult.data);
+          return cacheResult;
+        }
+      }
+
       setLoading(true);
       const response = await axios.get("/orders");
       setOrders(response.data);
-      return { success: true, data: response.data };
+
+      // Save to cache
+      await saveOrdersToCache(ORDERS_CACHE_KEY, response.data);
+
+      return { success: true, data: response.data, fromCache: false };
     } catch (error) {
       console.error("Error fetching all orders:", error);
       return {
@@ -27,12 +102,27 @@ export const OrdersProvider = ({ children }) => {
   };
 
   // Fetch orders by user ID
-  const fetchUserOrders = async (userId) => {
+  const fetchUserOrders = async (userId, forceRefresh = false) => {
     try {
+      const cacheKey = `user_orders_${userId}`;
+
+      // Check cache first
+      if (!forceRefresh) {
+        const cacheResult = await loadCachedOrders(cacheKey);
+        if (cacheResult.success) {
+          setOrders(cacheResult.data);
+          return cacheResult;
+        }
+      }
+
       setLoading(true);
       const response = await axios.get(`/orders/${userId}`);
       setOrders(response.data);
-      return { success: true, data: response.data };
+
+      // Save to cache
+      await saveOrdersToCache(cacheKey, response.data);
+
+      return { success: true, data: response.data, fromCache: false };
     } catch (error) {
       console.error("Error fetching user orders:", error);
       return {
@@ -52,6 +142,10 @@ export const OrdersProvider = ({ children }) => {
       if (response.data.success) {
         // Add the new order to the local state
         setOrders((prevOrders) => [...prevOrders, response.data.order]);
+
+        // Clear orders cache since new order was created
+        await clearOrdersCache();
+
         return { success: true, data: response.data.order };
       }
       return { success: false, error: "Failed to create order" };
@@ -75,6 +169,9 @@ export const OrdersProvider = ({ children }) => {
           order._id === orderId ? { ...order, status } : order
         )
       );
+
+      // Clear orders cache since status was updated
+      await clearOrdersCache();
 
       return response.data;
     } catch (error) {
@@ -131,6 +228,7 @@ export const OrdersProvider = ({ children }) => {
         createOrder,
         updateOrderStatus,
         getOrdersForUser,
+        clearOrdersCache,
       }}
     >
       {children}
