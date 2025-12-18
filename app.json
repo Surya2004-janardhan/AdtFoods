@@ -14,9 +14,15 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/fonts/icon.png",
+        "monochromeImage": "./assets/fonts/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.surya_expo.adityafoods"
+      "package": "com.surya_expo.adityafoods",
+      "splash": {
+        "image": "./assets/fonts/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -29,12 +35,17 @@
         "expo-splash-screen",
         {
           "image": "./assets/fonts/icon.png",
-          "imageWidth": 200,
+          "imageWidth": 150,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
       ]
     ],
+    "splash": {
+      "image": "./assets/fonts/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "experiments": {
       "typedRoutes": true
     },
