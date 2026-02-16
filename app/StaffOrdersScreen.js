@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -12,74 +12,28 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Toast from "react-native-toast-message";
+import OrdersContext from "../context/OrdersContext";
 
 const StaffOrdersScreen = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { orders, loading, fetchAllOrders, updateOrderStatus: updateOrderStatusContext } =
+    useContext(OrdersContext);
   const [filter, setFilter] = useState("all"); // all, pending, in_progress, completed
+  const [updatingOrders, setUpdatingOrders] = useState({});
   const router = useRouter();
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-
-        // Mock orders data - replace with actual API call
-        const mockOrders = [
-          {
-            id: "1",
-            orderNumber: "#ORD001",
-            customerName: "John Doe",
-            customerPhone: "+91 9999999999",
-            items: ["Chicken Biryani x2", "Paneer Tikka x1"],
-            total: 680,
-            status: "pending",
-            orderTime: "12:30 PM",
-            estimatedTime: "45 mins",
-            address: "123 Main Street, City",
-          },
-          {
-            id: "2",
-            orderNumber: "#ORD002",
-            customerName: "Jane Smith",
-            customerPhone: "+91 8888888888",
-            items: ["Pizza Margherita x1", "Garlic Bread x2"],
-            total: 520,
-            status: "in_progress",
-            orderTime: "12:15 PM",
-            estimatedTime: "30 mins",
-            address: "456 Oak Avenue, City",
-          },
-          {
-            id: "3",
-            orderNumber: "#ORD003",
-            customerName: "Mike Johnson",
-            customerPhone: "+91 7777777777",
-            items: ["Burger Combo x1", "French Fries x1"],
-            total: 350,
-            status: "completed",
-            orderTime: "11:45 AM",
-            estimatedTime: "25 mins",
-            address: "789 Pine Road, City",
-          },
-        ];
-
-        setTimeout(() => {
-          setOrders(mockOrders);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-        setLoading(false);
+    const loadOrders = async () => {
+      const result = await fetchAllOrders();
+      if (!result.success && result.error) {
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Failed to load orders",
+          text2: result.error,
         });
       }
     };
 
-    fetchOrders();
+    loadOrders();
   }, []);
 
   const getStatusColor = (status) => {
@@ -88,8 +42,12 @@ const StaffOrdersScreen = () => {
         return "#FF6B00";
       case "in_progress":
         return "#2196F3";
+      case "ready_to_pick":
+        return "#4CAF50";
       case "completed":
         return "#4CAF50";
+      case "cancelled":
+        return "#FF4444";
       default:
         return "#666666";
     }
@@ -101,25 +59,47 @@ const StaffOrdersScreen = () => {
         return "New Order";
       case "in_progress":
         return "Preparing";
-      case "completed":
+      case "ready_to_pick":
         return "Ready";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
       default:
         return "Unknown";
     }
   };
 
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+  const updateOrderStatus = async (orderId, newStatus) => {
+    // Prevent multiple simultaneous updates for the same order
+    if (updatingOrders[orderId]) return;
 
-    Toast.show({
-      type: "success",
-      text1: "Status Updated",
-      text2: `Order status changed to ${getStatusText(newStatus)}`,
-    });
+    try {
+      // Mark order as updating
+      setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
+
+      await updateOrderStatusContext(orderId, newStatus);
+
+      Toast.show({
+        type: "success",
+        text1: "Status Updated",
+        text2: `Order status changed to ${getStatusText(newStatus)}`,
+      });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to update order status",
+      });
+    } finally {
+      // Remove loading state
+      setUpdatingOrders((prev) => {
+        const newState = { ...prev };
+        delete newState[orderId];
+        return newState;
+      });
+    }
   };
 
   const getFilteredOrders = () => {
@@ -163,87 +143,111 @@ const StaffOrdersScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderOrder = ({ item }) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <View>
-          <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-          <Text style={styles.orderTime}>{item.orderTime}</Text>
-        </View>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(item.status) },
-          ]}
-        >
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-        </View>
-      </View>
+  const renderOrder = ({ item }) => {
+    const isUpdating = updatingOrders[item._id || item.id];
 
-      <View style={styles.customerInfo}>
-        <MaterialCommunityIcons name="account" size={16} color="#666666" />
-        <Text style={styles.customerName}>{item.customerName}</Text>
-        <TouchableOpacity
-          style={styles.callButton}
-          onPress={() => {
-            Toast.show({
-              type: "info",
-              text1: "Call Customer",
-              text2: item.customerPhone,
-            });
-          }}
-        >
-          <MaterialCommunityIcons name="phone" size={16} color="#FF6B00" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.itemsList}>
-        {item.items.map((foodItem, index) => (
-          <Text key={index} style={styles.itemText}>
-            • {foodItem}
-          </Text>
-        ))}
-      </View>
-
-      <View style={styles.orderFooter}>
-        <View>
-          <Text style={styles.estimatedTime}>Est. {item.estimatedTime}</Text>
-          <Text style={styles.orderTotal}>₹{item.total}</Text>
-        </View>
-
-        {item.status !== "completed" && (
-          <View style={styles.actionButtons}>
-            {item.status === "pending" && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.acceptButton]}
-                onPress={() => updateOrderStatus(item.id, "in_progress")}
-              >
-                <MaterialCommunityIcons
-                  name="check"
-                  size={16}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.actionButtonText}>Accept</Text>
-              </TouchableOpacity>
-            )}
-            {item.status === "in_progress" && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.readyButton]}
-                onPress={() => updateOrderStatus(item.id, "completed")}
-              >
-                <MaterialCommunityIcons
-                  name="check-all"
-                  size={16}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.actionButtonText}>Ready</Text>
-              </TouchableOpacity>
-            )}
+    return (
+      <View style={[styles.orderCard, isUpdating && { opacity: 0.6 }]}>
+        <View style={styles.orderHeader}>
+          <View>
+            <Text style={styles.orderNumber}>
+              #{item.orderNumber || item._id?.slice(-6)}
+            </Text>
+            <Text style={styles.orderTime}>
+              {new Date(item.createdAt || Date.now()).toLocaleTimeString()}
+            </Text>
           </View>
-        )}
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(item.status) },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {isUpdating ? "Updating..." : getStatusText(item.status)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.customerInfo}>
+          <MaterialCommunityIcons name="account" size={16} color="#666666" />
+          <Text style={styles.customerName}>
+            {item.customerName || "Customer"}
+          </Text>
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={() => {
+              Toast.show({
+                type: "info",
+                text1: "Call Customer",
+                text2: item.customerPhone || "N/A",
+              });
+            }}
+          >
+            <MaterialCommunityIcons name="phone" size={16} color="#FF6B00" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.itemsList}>
+          {(item.items || []).map((foodItem, index) => (
+            <Text key={index} style={styles.itemText}>
+              • {typeof foodItem === 'string' ? foodItem : `${foodItem.food?.name || 'Item'} x${foodItem.quantity}`}
+            </Text>
+          ))}
+        </View>
+
+        <View style={styles.orderFooter}>
+          <View>
+            <Text style={styles.estimatedTime}>
+              Est. {item.estimatedTime || "30 mins"}
+            </Text>
+            <Text style={styles.orderTotal}>₹{item.totalAmount || item.total}</Text>
+          </View>
+
+          {item.status !== "completed" && item.status !== "ready_to_pick" && (
+            <View style={styles.actionButtons}>
+              {item.status === "pending" && (
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    styles.acceptButton,
+                    isUpdating && { opacity: 0.5 },
+                  ]}
+                  onPress={() => updateOrderStatus(item._id || item.id, "ready_to_pick")}
+                  disabled={isUpdating}
+                >
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.actionButtonText}>Mark Ready</Text>
+                </TouchableOpacity>
+              )}
+              {item.status === "in_progress" && (
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    styles.readyButton,
+                    isUpdating && { opacity: 0.5 },
+                  ]}
+                  onPress={() => updateOrderStatus(item._id || item.id, "ready_to_pick")}
+                  disabled={isUpdating}
+                >
+                  <MaterialCommunityIcons
+                    name="check-all"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.actionButtonText}>Ready</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
