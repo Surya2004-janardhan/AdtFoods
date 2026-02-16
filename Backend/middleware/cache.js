@@ -17,9 +17,9 @@ const cacheMiddleware = (keyPrefix, ttl = 300) => {
         req.query.user_id || 
         "all";
       
-      // Include query params if they exist
+      // Include query params if they exist - use sorted keys for deterministic serialization
       const queryString = Object.keys(req.query).length > 0 
-        ? `:${JSON.stringify(req.query)}` 
+        ? `:${JSON.stringify(req.query, Object.keys(req.query).sort())}` 
         : "";
       
       const cacheKey = `${keyPrefix}:${cacheKeySuffix}${queryString}`;

@@ -107,6 +107,19 @@ const StaffOrdersScreen = () => {
     return orders.filter((order) => order.status === filter);
   };
 
+  // Helper function to get normalized order ID
+  const getOrderId = (order) => order._id || order.id;
+
+  // Helper function to format food item display
+  const formatFoodItemDisplay = (foodItem) => {
+    if (typeof foodItem === 'string') {
+      return foodItem;
+    }
+    const itemName = foodItem.food?.name || 'Item';
+    const quantity = foodItem.quantity || 1;
+    return `${itemName} x${quantity}`;
+  };
+
   const FilterButton = ({ title, value, count }) => (
     <TouchableOpacity
       style={[
@@ -144,7 +157,8 @@ const StaffOrdersScreen = () => {
   );
 
   const renderOrder = ({ item }) => {
-    const isUpdating = updatingOrders[item._id || item.id];
+    const orderId = getOrderId(item);
+    const isUpdating = updatingOrders[orderId];
 
     return (
       <View style={[styles.orderCard, isUpdating && { opacity: 0.6 }]}>
@@ -191,7 +205,7 @@ const StaffOrdersScreen = () => {
         <View style={styles.itemsList}>
           {(item.items || []).map((foodItem, index) => (
             <Text key={index} style={styles.itemText}>
-              • {typeof foodItem === 'string' ? foodItem : `${foodItem.food?.name || 'Item'} x${foodItem.quantity}`}
+              • {formatFoodItemDisplay(foodItem)}
             </Text>
           ))}
         </View>
@@ -213,7 +227,7 @@ const StaffOrdersScreen = () => {
                     styles.acceptButton,
                     isUpdating && { opacity: 0.5 },
                   ]}
-                  onPress={() => updateOrderStatus(item._id || item.id, "ready_to_pick")}
+                  onPress={() => updateOrderStatus(orderId, "ready_to_pick")}
                   disabled={isUpdating}
                 >
                   <MaterialCommunityIcons
@@ -231,7 +245,7 @@ const StaffOrdersScreen = () => {
                     styles.readyButton,
                     isUpdating && { opacity: 0.5 },
                   ]}
-                  onPress={() => updateOrderStatus(item._id || item.id, "ready_to_pick")}
+                  onPress={() => updateOrderStatus(orderId, "ready_to_pick")}
                   disabled={isUpdating}
                 >
                   <MaterialCommunityIcons
