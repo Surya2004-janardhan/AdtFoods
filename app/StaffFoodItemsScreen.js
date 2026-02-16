@@ -21,6 +21,7 @@ const StaffFoodItemsScreen = () => {
   const { foodItems, loading, fetchFoodItems, updateFoodItemAvailability } =
     useContext(FoodContext);
   const router = useRouter();
+  const [updatingItems, setUpdatingItems] = useState({});
 
   useEffect(() => {
     const loadFoodItems = async () => {
@@ -38,7 +39,13 @@ const StaffFoodItemsScreen = () => {
   }, []);
 
   const toggleAvailability = async (itemId) => {
+    // Prevent multiple simultaneous updates for the same item
+    if (updatingItems[itemId]) return;
+
     try {
+      // Mark item as updating
+      setUpdatingItems((prev) => ({ ...prev, [itemId]: true }));
+
       const item = foodItems.find((f) => f.id === itemId);
       const newAvailability = !item.available;
 
@@ -66,30 +73,43 @@ const StaffFoodItemsScreen = () => {
         text1: "Error",
         text2: "Failed to update item availability",
       });
+    } finally {
+      // Remove loading state
+      setUpdatingItems((prev) => {
+        const newState = { ...prev };
+        delete newState[itemId];
+        return newState;
+      });
     }
   };
 
-  const renderFoodItem = ({ item }) => (
-    <View style={styles.foodCard}>
-      <Image
-        source={{ uri: item.food_image || "https://via.placeholder.com/100" }}
-        style={styles.foodImage}
-      />
-      <View style={styles.foodInfo}>
-        <View style={styles.foodHeader}>
-          <Text style={styles.foodName} numberOfLines={2}>
-            {item.food_name}
-          </Text>
-          <View style={styles.availabilityContainer}>
-            <Text style={styles.availabilityLabel}>Available</Text>
-            <Switch
-              value={item.available}
-              onValueChange={() => toggleAvailability(item.id)}
-              trackColor={{ false: "#CCCCCC", true: "#FF6B00" }}
-              thumbColor={item.available ? "#FFFFFF" : "#FFFFFF"}
-            />
+  const renderFoodItem = ({ item }) => {
+    const isUpdating = updatingItems[item.id];
+
+    return (
+      <View style={[styles.foodCard, isUpdating && styles.foodCardUpdating]}>
+        <Image
+          source={{ uri: item.food_image || "https://via.placeholder.com/100" }}
+          style={styles.foodImage}
+        />
+        <View style={styles.foodInfo}>
+          <View style={styles.foodHeader}>
+            <Text style={styles.foodName} numberOfLines={2}>
+              {item.food_name}
+            </Text>
+            <View style={styles.availabilityContainer}>
+              <Text style={styles.availabilityLabel}>
+                {isUpdating ? "Updating..." : "Available"}
+              </Text>
+              <Switch
+                value={item.available}
+                onValueChange={() => toggleAvailability(item.id)}
+                trackColor={{ false: "#CCCCCC", true: "#FF6B00" }}
+                thumbColor={item.available ? "#FFFFFF" : "#FFFFFF"}
+                disabled={isUpdating}
+              />
+            </View>
           </View>
-        </View>
 
         <Text style={styles.foodCategory}>{item.category}</Text>
         <Text style={styles.foodDescription} numberOfLines={2}>
@@ -113,8 +133,8 @@ const StaffFoodItemsScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -315,6 +335,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#F0F0F0",
+  },
+  foodCardUpdating: {
+    opacity: 0.6,
   },
   foodImage: {
     width: 80,

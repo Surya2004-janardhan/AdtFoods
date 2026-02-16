@@ -9,10 +9,20 @@ const cacheMiddleware = (keyPrefix, ttl = 300) => {
     }
 
     try {
-      // Generate cache key based on route and params
-      const cacheKey = `${keyPrefix}:${
-        req.params.id || req.params.restaurantId || req.params.userId || "all"
-      }`;
+      // Generate cache key based on route, params, and query parameters
+      let cacheKeySuffix = 
+        req.params.id || 
+        req.params.restaurantId || 
+        req.params.userId || 
+        req.query.user_id || 
+        "all";
+      
+      // Include query params if they exist - use sorted keys for deterministic serialization
+      const queryString = Object.keys(req.query).length > 0 
+        ? `:${JSON.stringify(req.query, Object.keys(req.query).sort())}` 
+        : "";
+      
+      const cacheKey = `${keyPrefix}:${cacheKeySuffix}${queryString}`;
 
       // Try to get cached data
       const cachedData = await getCache(cacheKey);
