@@ -4,7 +4,7 @@ const authController = require("../controllers/authController");
 const validateRequest =
   require("../middleware/validateRequest").validateRequest;
 const { cacheMiddleware, clearCache } = require("../middleware/cache");
-const { authLimiter, strictLimiter } = require("../middleware/rateLimiter");
+const { authLimiter, strictLimiter, apiLimiter } = require("../middleware/rateLimiter");
 
 // Login validation schema
 const loginSchema = {
@@ -33,6 +33,7 @@ router.post("/signup", authLimiter, clearCache("user-token:*"), authController.s
 router.get("/verify", authController.verifyToken); // New route for token verification
 router.get(
   "/get-token",
+  apiLimiter,
   cacheMiddleware("user-token", 600),
   authController.getToken
 );
