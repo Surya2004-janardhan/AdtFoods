@@ -213,7 +213,10 @@ const UserCartScreen = () => {
 
             {/* Checkout Button */}
             <TouchableOpacity
-              style={styles.checkoutButton}
+              style={[
+                styles.checkoutButton,
+                loading && { opacity: 0.6 },
+              ]}
               onPress={handleCheckout}
               disabled={loading}
             >
